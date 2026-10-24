@@ -1,0 +1,2597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#091823">
+<title>go fly · 轻松起飞修复版</title>
+<style>
+:root{
+  --glass:rgba(7,22,35,.83);
+  --border:rgba(162,218,245,.22);
+  --cyan:#89efff;
+  --green:#adf3c4;
+  --orange:#ffd095;
+  --muted:#a5bdcc;
+}
+*{box-sizing:border-box}
+html,body{
+  width:100%;height:100%;margin:0;overflow:hidden;
+  background:#081723;color:#edf8ff;
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  overscroll-behavior:none;
+}
+button,input,select{font:inherit}
+button{
+  color:#edf8ff;background:#19384edb;
+  border:1px solid var(--border);border-radius:10px;
+  padding:9px 12px;min-height:39px;cursor:pointer;
+  touch-action:manipulation;
+}
+button:hover{background:#305870}
+button:active{background:#44708a}
+button.primary{background:var(--cyan);color:#082a35;font-weight:800}
+button.active{border-color:var(--green);color:var(--green)}
+button.warn{color:var(--orange)}
+button:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+input[type=range]{width:100%;accent-color:var(--cyan);touch-action:pan-x}
+input[type=number],select{
+  width:100%;min-width:0;color:white;background:#142e40;
+  border:1px solid var(--border);border-radius:8px;padding:9px;
+}
+input[type=checkbox]{accent-color:var(--cyan)}
+kbd{
+  font-size:11px;background:#19384c;border:1px solid #54748b;
+  border-radius:4px;padding:2px 5px;white-space:nowrap;
+}
+.hidden{display:none!important}
+.glass{
+  background:var(--glass);border:1px solid var(--border);
+  border-radius:14px;backdrop-filter:blur(12px);
+}
+#world{display:block;width:100%;height:100%;touch-action:none}
+#graphicsHUD{
+  position:absolute;inset:0;width:100%;height:100%;
+  pointer-events:none;
+}
+#topbar{
+  position:absolute;top:max(10px,env(safe-area-inset-top));
+  left:12px;right:12px;display:flex;gap:10px;align-items:center;
+}
+.logo{padding:7px 14px;font-size:25px;font-weight:850;letter-spacing:-1px}
+.logo span{color:var(--cyan)}
+#planeName{font-size:12px;color:var(--muted)}
+#toolbar{margin-left:auto;display:flex;gap:5px}
+#toolbar button{font-size:12px;padding:7px 10px}
+#compass{
+  position:absolute;top:74px;left:50%;transform:translateX(-50%);
+  text-align:center;pointer-events:none;text-shadow:0 2px 8px #000;
+}
+#heading{font-size:24px;font-weight:800;letter-spacing:2px}
+#navigation{font-size:11px;color:#cee1ec;margin-top:4px}
+#heightCard{
+  position:absolute;right:15px;top:118px;width:218px;padding:15px;
+}
+.height-title{font-size:13px;color:#d0e5ef}
+#heightValue{font-size:47px;font-weight:850;line-height:1.15;color:var(--cyan)}
+.height-unit{font-size:15px;color:#c4dbe7;margin-left:5px}
+#heightExplanation{font-size:10px;color:#90acbd;line-height:1.5;margin-top:3px}
+#verticalDescription{font-size:13px;margin-top:11px}
+#heightHint{font-size:12px;color:var(--green);line-height:1.6;margin-top:6px}
+#landingBadge{
+  display:inline-block;font-size:10px;border-radius:5px;
+  padding:3px 6px;background:#22493a;color:var(--green);margin-top:8px;
+}
+#warning{
+  position:absolute;top:34%;left:50%;transform:translateX(-50%);
+  max-width:65vw;text-align:center;font-size:17px;font-weight:800;
+  color:var(--orange);text-shadow:0 2px 9px #000;pointer-events:none;
+}
+#crosshair{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:23px;height:23px;border:1px solid #c9ffdf90;border-radius:50%;
+  pointer-events:none;
+}
+#crosshair:before,#crosshair:after{
+  content:"";position:absolute;background:#ceffdf;opacity:.8;
+}
+#crosshair:before{left:10px;top:7px;width:1px;height:7px}
+#crosshair:after{left:7px;top:10px;width:7px;height:1px}
+#telemetry{
+  position:absolute;bottom:17px;left:50%;transform:translateX(-50%);
+  display:flex;padding:11px 4px;pointer-events:none;
+}
+.metric{padding:0 12px;min-width:80px;text-align:center;border-right:1px solid var(--border)}
+.metric:last-child{border:0}
+.metric small{font-size:10px;color:var(--muted);display:block}
+.metric strong{display:block;font-size:23px;margin-top:3px}
+.metric em{font-size:10px;font-style:normal;color:#b4ccdb}
+#powerPanel{position:absolute;left:15px;bottom:18px;width:157px;padding:12px}
+#powerPanel label{font-size:12px;color:#b6cfdd}
+#throttleValue{float:right;color:var(--cyan)}
+#throttle{margin:12px 0 7px}
+#flightStatus{font-size:11px;line-height:1.9;color:#b8d1df}
+#mapPanel{position:absolute;right:15px;bottom:18px;padding:7px;width:164px}
+#map{display:block;width:148px;height:148px;border-radius:8px}
+.map-caption{font-size:10px;text-align:center;color:#9ebacb;margin-top:4px}
+#lesson{
+  position:absolute;left:15px;top:122px;width:270px;padding:15px;
+}
+.eyebrow{color:var(--cyan);font-size:10px;letter-spacing:2px}
+#lesson h3{font-size:16px;margin:9px 0}
+#lesson p{font-size:12px;color:#c0d6e3;line-height:1.75;margin:0 0 11px}
+#lesson footer{display:flex;gap:6px}
+#lesson button{min-height:30px;font-size:11px;padding:5px 8px}
+#toast{
+  position:absolute;left:50%;bottom:145px;transform:translateX(-50%);
+  padding:11px 17px;max-width:min(540px,85vw);
+  text-align:center;font-size:13px;opacity:0;transition:opacity .2s;
+  pointer-events:none;
+}
+#pauseLabel{
+  position:absolute;left:50%;top:42%;transform:translateX(-50%);
+  font-size:29px;font-weight:800;pointer-events:none;
+}
+#cockpit{position:absolute;inset:0;pointer-events:none}
+#cockpit:before,#cockpit:after{
+  content:"";position:absolute;top:-12%;height:135%;width:14px;
+  background:linear-gradient(90deg,#071b2b,#416079,#0a1b2b);
+  opacity:.8;
+}
+#cockpit:before{left:11%;transform:rotate(-14deg)}
+#cockpit:after{right:11%;transform:rotate(14deg)}
+#cockpitBottom{
+  position:absolute;bottom:0;left:0;right:0;height:125px;
+  background:linear-gradient(transparent,#07111fd9);
+}
+#touchControls{display:none}
+#joystick{
+  position:absolute;left:23px;bottom:140px;width:124px;height:124px;
+  border:1px solid #bdeaff66;border-radius:50%;
+  background:#102e4655;touch-action:none;
+}
+#joystick:before,#joystick:after{content:"";position:absolute;background:#a8d9f333}
+#joystick:before{left:11px;top:61px;width:100px;height:1px}
+#joystick:after{left:61px;top:11px;width:1px;height:100px}
+#stick{
+  position:absolute;left:41px;top:41px;width:42px;height:42px;
+  background:#bdeeff70;border:1px solid #d4f7ff;border-radius:50%;
+  pointer-events:none;
+}
+#joystickLabel{
+  position:absolute;left:-10px;right:-10px;bottom:-25px;
+  text-align:center;font-size:10px;color:#d1e8f5;
+}
+#touchActions{
+  position:absolute;right:17px;bottom:122px;
+  display:grid;grid-template-columns:52px 52px;gap:6px;
+}
+#touchActions button{
+  width:52px;height:42px;min-height:42px;padding:3px;
+  font-size:11px;background:#102e46d4;touch-action:none;
+}
+#touchFire{color:var(--orange);border-color:#ffc99188}
+#rotateHint{
+  position:absolute;top:109px;left:15px;color:#bad5e6;
+  font-size:11px;pointer-events:none;display:none;
+}
+.overlay{
+  position:absolute;inset:0;z-index:30;
+  background:rgba(2,9,16,.62);display:flex;
+  align-items:center;justify-content:center;padding:20px;
+}
+.dialog{
+  width:min(920px,100%);max-height:94dvh;overflow:auto;
+  background:rgba(8,24,37,.97);border:1px solid var(--border);
+  border-radius:20px;padding:27px;box-shadow:0 25px 90px #0008;
+}
+.dialog h1{margin:5px 0;font-size:59px;letter-spacing:-3px}
+.dialog h1 span{color:var(--cyan)}
+.dialog h2{margin:0 0 15px}
+.subtitle{color:var(--muted);font-size:13px;line-height:1.8}
+.planes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:21px 0}
+.plane-card{text-align:left;padding:16px;background:#132d40}
+.plane-card.selected{border-color:var(--cyan);box-shadow:inset 0 0 0 1px var(--cyan)}
+.plane-card svg{width:100%;height:82px;margin-bottom:9px}
+.plane-card h3{font-size:17px;margin:6px 0}
+.plane-card p{font-size:12px;line-height:1.7;color:#abc5d7;margin:7px 0}
+.badge{font-size:10px;letter-spacing:1px;color:var(--cyan)}
+.actions{display:flex;gap:9px;flex-wrap:wrap}
+.actions button{flex:1;min-width:145px}
+.note{font-size:11px;color:#89a5b8;line-height:1.8}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px 24px}
+.setting label{font-size:13px;color:#c1d8e6;display:block;margin-bottom:8px}
+.setting output{float:right;color:var(--cyan)}
+.setting .row{display:flex;gap:8px;align-items:center}
+.checks{display:flex;flex-direction:column;gap:12px}
+.checks label{font-size:13px;color:#bed6e4}
+.dialog-footer{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:23px}
+.controls-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.control-row{
+  background:#132e42;border-radius:8px;padding:11px;
+  display:flex;justify-content:space-between;gap:8px;font-size:12px;
+}
+.guide-box{background:#112d40;padding:14px;border-radius:12px;margin-top:14px}
+.guide-box h3{font-size:15px;color:var(--cyan);margin:0 0 7px}
+.guide-box p{font-size:13px;color:#bed5e4;line-height:1.85;margin:0}
+#crashScreen .dialog{max-width:510px;text-align:center}
+#crashScreen h2{color:var(--orange)}
+#crashInfo{font-size:13px;color:#bad0df;line-height:1.8}
+@media(pointer:coarse){
+  #touchControls{display:block}
+  #flightStatus{display:none}
+  #powerPanel{width:145px}
+  #toast{bottom:285px}
+  #telemetry{padding:9px 3px}
+  .metric{min-width:67px;padding:0 8px}
+  .metric strong{font-size:20px}
+  #mapPanel{display:none}
+}
+@media(max-width:1000px){
+  #planeName{display:none}
+  #toolbar button{font-size:11px;padding:7px 8px}
+  .logo{font-size:22px;padding:7px 11px}
+}
+@media(max-width:750px){
+  #topbar{left:8px;right:8px;gap:5px}
+  #toolbar{gap:4px}
+  #toolbar button{padding:6px 7px;font-size:11px;min-height:34px}
+  #settingsBtn .long,#landingBtn .long{display:none}
+  #compass{top:60px}
+  #heading{font-size:20px}
+  #navigation{font-size:10px}
+  #heightCard{top:105px;right:10px;width:185px;padding:11px}
+  #heightValue{font-size:36px}
+  #heightHint{font-size:11px}
+  #verticalDescription{font-size:12px}
+  #lesson{width:227px;padding:12px;top:109px}
+  .dialog{padding:20px}
+  .dialog h1{font-size:46px}
+  #mapPanel{display:none}
+  .metric{min-width:66px;padding:0 8px}
+  .metric strong{font-size:20px}
+}
+@media(max-width:540px){
+  .planes{grid-template-columns:1fr;gap:8px;margin:16px 0}
+  .plane-card{padding:10px 12px 10px 99px;position:relative;min-height:91px}
+  .plane-card svg{position:absolute;left:12px;top:15px;width:73px;height:63px}
+  .plane-card h3{font-size:15px;margin:3px 0}
+  .plane-card p{font-size:11px;margin:3px 0}
+  .settings-grid,.controls-grid{grid-template-columns:1fr}
+  #autoBtn{display:none}
+  #viewBtn{font-size:0!important}
+  #viewBtn:after{content:"视角";font-size:11px}
+  #helpBtn{font-size:0!important}
+  #helpBtn:after{content:"帮助";font-size:11px}
+  #pauseBtn{font-size:0!important}
+  #pauseBtn:after{content:"Ⅱ";font-size:13px}
+  .logo{font-size:19px;padding:7px 9px}
+  #heightCard{width:184px}
+  #lesson{top:299px;width:218px}
+  #telemetry{right:8px;left:auto;transform:none;bottom:18px}
+  .metric{min-width:59px;padding:0 6px}
+  .metric strong{font-size:18px}
+  .metric.secondary{display:none}
+  #powerPanel{left:8px;width:127px;bottom:18px;padding:10px}
+  #warning{top:43%;font-size:14px;max-width:90vw}
+  #joystick{left:18px;bottom:143px}
+  #touchActions{right:12px;bottom:135px}
+}
+@media(max-height:550px) and (min-width:541px){
+  #compass{top:55px}
+  #heading{font-size:18px}
+  #heightCard{top:76px;width:188px;padding:9px}
+  #heightValue{font-size:31px}
+  #heightExplanation{display:none}
+  #verticalDescription{margin-top:4px;font-size:11px}
+  #heightHint{margin-top:3px;font-size:11px}
+  #landingBadge{margin-top:4px}
+  #lesson{top:82px;width:220px;padding:10px}
+  #lesson h3{font-size:14px;margin:6px 0}
+  #lesson p{font-size:11px;margin-bottom:7px}
+  #lesson button{min-height:27px}
+  #joystick{bottom:112px;width:112px;height:112px}
+  #stick{left:35px;top:35px}
+  #joystick:before{top:55px;width:90px}
+  #joystick:after{left:55px;height:90px}
+  #touchActions{bottom:102px}
+  #powerPanel{padding:8px 11px;bottom:12px}
+  #flightStatus{display:none}
+  #telemetry{bottom:12px;padding:8px 3px}
+  #mapPanel{display:none}
+  #toast{bottom:85px}
+  #warning{top:39%;font-size:14px}
+}
+@media(orientation:portrait) and (pointer:coarse){
+  #rotateHint{display:block}
+}
+</style>
+</head>
+<body>
+<canvas id="world"></canvas>
+
+<div id="gameUI" class="hidden">
+  <canvas id="graphicsHUD"></canvas>
+  <div id="cockpit" class="hidden"><div id="cockpitBottom"></div></div>
+
+  <div id="topbar">
+    <div class="logo glass">go <span>fly</span></div>
+    <div id="planeName"></div>
+    <div id="toolbar">
+      <button id="viewBtn">视角 V</button>
+      <button id="autoBtn">自动驾驶</button>
+      <button id="levelBtn" class="active">自动摆正</button>
+      <button id="landingBtn" class="warn">自动<span class="long">降落</span></button>
+      <button id="helpBtn">帮助 H</button>
+      <button id="settingsBtn">设置</button>
+      <button id="pauseBtn">暂停 P</button>
+    </div>
+  </div>
+
+  <div id="compass">
+    <div id="heading">000° N</div>
+    <div id="navigation">自由飞行</div>
+  </div>
+
+  <div id="heightCard" class="glass">
+    <div class="height-title">飞机距脚下地面</div>
+    <div><strong id="heightValue">0.0</strong><span class="height-unit">米</span></div>
+    <div id="heightExplanation">看这个数字判断是否快接地，<br>不用看海拔猜高度。</div>
+    <div id="verticalDescription">轮胎已经接地</div>
+    <div id="heightHint">地面滑行</div>
+    <div id="landingBadge">轻松降落辅助开启</div>
+  </div>
+
+  <div id="warning"></div>
+  <div id="crosshair"></div>
+  <div id="pauseLabel" class="hidden">已暂停</div>
+  <div id="rotateHint">建议横屏，操作更舒服</div>
+
+  <div id="lesson" class="glass hidden">
+    <div class="eyebrow" id="lessonCounter">FLIGHT SCHOOL</div>
+    <h3 id="lessonTitle"></h3>
+    <p id="lessonText"></p>
+    <footer>
+      <button id="lessonPrev">上一步</button>
+      <button id="lessonNext">下一步</button>
+      <button id="lessonClose">收起</button>
+    </footer>
+  </div>
+
+  <div id="powerPanel" class="glass">
+    <label>油门 <span id="throttleValue">0%</span></label>
+    <input id="throttle" type="range" min="0" max="100" value="0" aria-label="油门">
+    <button id="takeoffBtn" class="primary" style="width:100%;margin:5px 0;font-size:12px">一键起飞</button>
+    <div id="flightStatus"></div>
+  </div>
+
+  <div id="telemetry" class="glass">
+    <div class="metric"><small>空速</small><strong id="speed">0</strong><em>km/h</em></div>
+    <div class="metric secondary"><small>海拔 · 次要</small><strong id="altitude">8</strong><em>m ASL</em></div>
+    <div class="metric"><small>距地面</small><strong id="agl">0.0</strong><em>米</em></div>
+    <div class="metric secondary"><small>航程</small><strong id="distance">0.0</strong><em>km</em></div>
+  </div>
+
+  <div id="mapPanel" class="glass">
+    <canvas id="map" width="180" height="180"></canvas>
+    <div class="map-caption">导航雷达 · 半径 6 km</div>
+  </div>
+
+  <div id="touchControls">
+    <div id="joystick">
+      <div id="stick"></div>
+      <div id="joystickLabel">下拉抬头 · 左右倾斜</div>
+    </div>
+    <div id="touchActions">
+      <button id="touchFire">射击</button>
+      <button id="touchBrake">刹车</button>
+      <button id="touchLeft">左舵</button>
+      <button id="touchRight">右舵</button>
+      <button id="touchGear">起落架</button>
+      <button id="touchFlaps">襟翼</button>
+    </div>
+  </div>
+
+  <div id="toast" class="glass"></div>
+</div>
+
+<div id="startScreen" class="overlay">
+  <div class="dialog">
+    <div class="eyebrow">AN OPEN SKY. NO DESTINATION.</div>
+    <h1>go <span>fly</span></h1>
+    <p class="subtitle">
+      没有任务，没有终点。你是飞行员，想去哪就去哪。<br>
+       起飞更轻松：点左下角“一键起飞”，自动加速、抬头并爬升。默认开启“自动摆正”；任何一片平地都能降落，
+      也可以点“自动降落”让飞机自己找地方落下来。
+    </p>
+    <div class="planes">
+      <button class="plane-card selected" data-plane="trainer">
+        <svg viewBox="0 0 220 100" aria-hidden="true">
+          <path fill="#e3f1f7" stroke="#85b5ce" stroke-width="2"
+            d="M110 5 L118 34 L198 47 L198 61 L119 56 L115 80 L144 86 L144 94 L110 89 L76 94 L76 86 L105 80 L101 56 L22 61 L22 47 L102 34 Z"/>
+          <ellipse cx="110" cy="31" rx="6" ry="13" fill="#64cee5"/>
+          <path d="M91 10 L129 10" stroke="#ffc788" stroke-width="4"/>
+        </svg>
+        <div class="badge">EASY · 轻型螺旋桨</div>
+        <h3>SKYLARK S-1</h3>
+        <p>慢速、稳定，适合入门和看风景。<br>固定起落架，新手推荐。</p>
+      </button>
+
+      <button class="plane-card" data-plane="fighter">
+        <svg viewBox="0 0 220 100" aria-hidden="true">
+          <path fill="#a1b5cc" stroke="#e0efff" stroke-width="2"
+            d="M110 3 L119 39 L180 72 L178 84 L127 71 L137 95 L115 89 L105 89 L83 95 L93 71 L42 84 L40 72 L101 39 Z"/>
+          <path d="M105 28 Q110 12 115 28 L117 48 L103 48 Z" fill="#66d8eb"/>
+          <path d="M104 90 L108 99 M116 90 L112 99" stroke="#ffc27a" stroke-width="5"/>
+        </svg>
+        <div class="badge">FAST · 喷气战斗机</div>
+        <h3>FALCON F-9</h3>
+        <p>灵活、快速，配备加力燃烧。<br>适合高速飞行与翻滚。</p>
+      </button>
+
+      <button class="plane-card" data-plane="airliner">
+        <svg viewBox="0 0 220 100" aria-hidden="true">
+          <path fill="#f0f4f7" stroke="#98b7cc" stroke-width="2"
+            d="M110 3 Q117 3 119 19 L120 41 L201 71 L198 80 L120 60 L117 84 L145 94 L142 99 L110 91 L78 99 L75 94 L103 84 L100 60 L22 80 L19 71 L100 41 L101 19 Q103 3 110 3 Z"/>
+          <path d="M106 17 L114 17" stroke="#4a9fc8" stroke-width="5"/>
+          <rect x="68" y="49" width="10" height="20" rx="4" fill="#60bdcd"/>
+          <rect x="142" y="49" width="10" height="20" rx="4" fill="#60bdcd"/>
+        </svg>
+        <div class="badge">HEAVY · 双发客机</div>
+        <h3>AURORA A-220</h3>
+        <p>大型双发飞机，操纵更加平缓。<br>可以用降落辅助轻松体验。</p>
+      </button>
+    </div>
+    <div class="actions">
+      <button id="startGround" class="primary">从跑道起飞</button>
+      <button id="startAir">直接进入天空</button>
+      <button id="startLanding">观看自动降落</button>
+    </div>
+    <p class="note">
+      单文件 · 离线运行 · 电脑 / 手机 · 持续生成的开放地形<br>
+      娱乐向飞行模拟，不是专业训练软件。所有机型的射击功能均为虚构练习用途。
+    </p>
+  </div>
+</div>
+
+<div id="settingsScreen" class="overlay hidden">
+  <div class="dialog" style="max-width:740px">
+    <h2>飞行设置</h2>
+    <div class="settings-grid">
+      <div class="setting">
+        <label>一天中的时间 <output id="timeLabel"></output></label>
+        <input id="timeSetting" type="range" min="0" max="23.9" step=".1">
+      </div>
+      <div class="setting">
+        <label>天气</label>
+        <select id="weatherSetting">
+          <option value="clear">晴朗</option>
+          <option value="cloudy">多云</option>
+          <option value="haze">薄雾</option>
+          <option value="storm">风雨</option>
+        </select>
+      </div>
+      <div class="setting">
+        <label>风速 <output id="windLabel"></output></label>
+        <input id="windSetting" type="range" min="0" max="25" step="1">
+      </div>
+      <div class="setting">
+        <label>画质</label>
+        <select id="qualitySetting">
+          <option value="low">流畅 · 低</option>
+          <option value="medium">均衡 · 中</option>
+          <option value="high">精细 · 高</option>
+        </select>
+      </div>
+      <div class="setting">
+        <label>操纵灵敏度 <output id="sensitivityLabel"></output></label>
+        <input id="sensitivitySetting" type="range" min="50" max="150" step="5">
+        <p class="note">数值越大，同样的按键或摇杆动作，飞机反应越快。</p>
+      </div>
+      <div class="setting">
+        <label>自动驾驶目标距地高度 / 米</label>
+        <input id="autoAltitude" type="number" min="100" max="12000" step="100">
+        <button id="settingsAutoBtn" style="width:100%;margin-top:8px">开启 / 关闭自动驾驶</button>
+      </div>
+      <div class="setting">
+        <label>直接调整距地面高度 / 米</label>
+        <div class="row">
+          <input id="spawnAltitude" type="number" min="100" max="10000" step="100">
+          <button id="applyHeight">应用</button>
+        </div>
+        <p class="note">在当前位置升到指定高度，不用重新起飞。</p>
+      </div>
+      <div class="checks">
+        <label><input id="easySetting" type="checkbox"> 轻松降落：对正、减速、柔和接地</label>
+        <label><input id="assistSetting" type="checkbox"> 自动摆正：默认保持水平与航向，操纵随时优先</label>
+        <label><input id="soundSetting" type="checkbox"> 发动机、风声与射击音效</label>
+        <label><input id="targetSetting" type="checkbox"> 显示可射击的练习气球</label>
+        <label><input id="fuelSetting" type="checkbox"> 无限燃油</label>
+      </div>
+      <div class="setting">
+        <label>切换飞机</label>
+        <select id="planeSetting">
+          <option value="trainer">SKYLARK S-1 · 轻型飞机</option>
+          <option value="fighter">FALCON F-9 · 战斗机</option>
+          <option value="airliner">AURORA A-220 · 客机</option>
+        </select>
+        <button id="changePlane" style="width:100%;margin-top:9px">切换并回到跑道</button>
+      </div>
+    </div>
+    <p class="note">
+      距地面高度是飞机最低接地点与脚下地形的间距。起落架收起时，按机腹估算。<br>
+      “自动降落”会就近寻找一片平地，自己转弯对正、放下起落架、沿下滑道接地并刹停，任何陆地都可用。
+    </p>
+    <div class="dialog-footer">
+      <button id="refuelBtn">加满燃油</button>
+      <button id="runwayBtn">回到跑道</button>
+      <button id="settingsLanding">自动降落演示</button>
+      <button id="settingsClose" class="primary">返回飞行</button>
+    </div>
+  </div>
+</div>
+
+<div id="helpScreen" class="overlay hidden">
+  <div class="dialog" style="max-width:780px">
+    <h2>飞行员手册</h2>
+    <div class="controls-grid">
+      <div class="control-row"><span>抬头 / 低头</span><span><kbd>S</kbd> / <kbd>W</kbd> 或 ↓ / ↑</span></div>
+      <div class="control-row"><span>左 / 右倾斜</span><span><kbd>A</kbd> / <kbd>D</kbd> 或 ← / →</span></div>
+      <div class="control-row"><span>左 / 右方向舵</span><span><kbd>Q</kbd> / <kbd>E</kbd></span></div>
+      <div class="control-row"><span>增加 / 减少油门</span><span><kbd>Shift</kbd> / <kbd>-</kbd></span></div>
+      <div class="control-row"><span>射击 / 刹车</span><span><kbd>Space</kbd> / <kbd>B</kbd></span></div>
+      <div class="control-row"><span>起落架 / 襟翼</span><span><kbd>G</kbd> / <kbd>F</kbd></span></div>
+      <div class="control-row"><span>切换视角</span><kbd>V</kbd></div>
+      <div class="control-row"><span>自动驾驶</span><kbd>T</kbd></div>
+      <div class="control-row"><span>自动摆正 开 / 关</span><kbd>L</kbd></div>
+      <div class="control-row"><span>发动机开关</span><kbd>I</kbd></div>
+      <div class="control-row"><span>回到跑道</span><kbd>N</kbd></div>
+      <div class="control-row"><span>暂停 / 帮助</span><span><kbd>P</kbd> / <kbd>H</kbd></span></div>
+      <div class="control-row"><span>关闭面板</span><kbd>Esc</kbd></div>
+    </div>
+    <div class="guide-box">
+      <h3>起飞：先速度，再轻轻抬头</h3>
+      <p>
+        地面重置时襟翼默认 1 档。点击左下角“一键起飞”，自动加速、抬头并爬升至距地 100 米；操纵可随时接管。<br>
+      也可手动推满油门，轻松模式会在达到起飞速度后辅助抬头。关闭轻松模式后，
+        轻按 S 或轻轻下拉摇杆。不要一直猛拉。
+        离地后继续轻拉保持爬升；松开操纵杆，自动摆正会把飞机配平为平飞，
+        所以想继续爬升就继续轻拉，想平飞就松手。
+      </p>
+    </div>
+    <div class="guide-box">
+      <h3>降落：任何一片平地都可以</h3>
+      <p>
+        ① 右上角大字“飞机距脚下地面”。② “每秒下降多少米”。<br>
+        按住 B（手机按“刹车”）会展开减速板并放起落架襟翼，速度会明显掉下来。
+        距地面 30 米以内尽量每秒下降 1—3 米，机翼保持水平就能接地。
+        不需要跑道，草地、山坡下的平地都能降；接地偏重也有一次容错。
+      </p>
+    </div>
+    <div class="guide-box">
+      <h3>自动摆正：不会再自己升或自己降</h3>
+      <p>
+        默认开启“自动摆正”（按 L 开关）。松杆时飞机会自己回到水平并保持当前航向，
+        同时用垂直速度反馈压住“一直上升 / 一直下降”，并自动配平俯仰。
+        任何时候按方向键或推摇杆都会立刻接管，没有人和你抢操纵。
+      </p>
+    </div>
+    <div class="guide-box">
+      <h3>不会降落？按一次“自动降落”</h3>
+      <p>
+        点顶部“自动降落”，飞机会在前方自动寻找一片平地，自己转弯对正、
+        沿下滑道下降、放起落架并刹停，任何陆地都能落。动摇杆或按任意操纵键可随时接管。
+      </p>
+    </div>
+    <div class="guide-box">
+      <h3>手机操作与自由飞行</h3>
+      <p>
+        左侧摇杆下拉抬头、上推低头，左右控制倾斜。
+        油门使用滑块，右侧按钮控制机炮、刹车、方向舵、起落架和襟翼。
+        环绕视角可拖动画面调整镜头。地形持续生成，不设置世界边墙。
+        自动驾驶不会自动避开山体；“自动降落”会自己找平地，但山区请提前一点按。
+      </p>
+    </div>
+    <div class="dialog-footer">
+      <button id="showLessons">显示分步引导</button>
+      <button id="helpClose" class="primary">返回飞行</button>
+    </div>
+  </div>
+</div>
+
+<div id="crashScreen" class="overlay hidden">
+  <div class="dialog">
+    <div class="eyebrow">THE ADVENTURE CONTINUES</div>
+    <h2>飞机已经损毁</h2>
+    <p id="crashInfo"></p>
+    <div class="actions">
+      <button id="crashRunway" class="primary">从跑道重新起飞</button>
+      <button id="crashAir">直接回到天空</button>
+    </div>
+    <button id="crashLanding" style="width:100%;margin-top:10px">观看自动降落</button>
+    <button id="crashChoose" style="width:100%;margin-top:8px">重新选择飞机</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+(() => {
+  const $ = id => document.getElementById(id);
+  const canvas = $("world");
+  const gl = canvas.getContext("webgl", {
+    alpha:false, antialias:true, powerPreference:"high-performance"
+  });
+  if (!gl) {
+    $("startScreen").innerHTML =
+      '<div class="dialog"><h2>无法启用 3D 图形</h2><p>请使用支持 WebGL 的 Chrome、Edge 或手机浏览器，并启用硬件加速。</p></div>';
+    return;
+  }
+
+  const PI = Math.PI, TAU = PI*2, GRAVITY = 9.81;
+  const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+  const mix = (a,b,t) => a+(b-a)*t;
+  const wrap = v => Math.atan2(Math.sin(v),Math.cos(v));
+  const smooth = (a,b,v) => {
+    const t=clamp((v-a)/(b-a),0,1);
+    return t*t*(3-2*t);
+  };
+  const add = (a,b) => [a[0]+b[0],a[1]+b[1],a[2]+b[2]];
+  const sub = (a,b) => [a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+  const mul = (a,s) => [a[0]*s,a[1]*s,a[2]*s];
+  const dot = (a,b) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  const cross = (a,b) => [
+    a[1]*b[2]-a[2]*b[1],
+    a[2]*b[0]-a[0]*b[2],
+    a[0]*b[1]-a[1]*b[0]
+  ];
+  const len = a => Math.hypot(...a);
+  const norm = a => mul(a,1/(len(a)||1));
+  const damp = (rate,dt) => 1-Math.exp(-rate*dt);
+
+  function qmul(a,b) {
+    return [
+      a[3]*b[0]+a[0]*b[3]+a[1]*b[2]-a[2]*b[1],
+      a[3]*b[1]-a[0]*b[2]+a[1]*b[3]+a[2]*b[0],
+      a[3]*b[2]+a[0]*b[1]-a[1]*b[0]+a[2]*b[3],
+      a[3]*b[3]-a[0]*b[0]-a[1]*b[1]-a[2]*b[2]
+    ];
+  }
+  function qaxis(axis,angle) {
+    return [...mul(axis,Math.sin(angle/2)),Math.cos(angle/2)];
+  }
+  function rotate(q,v) {
+    const u=q.slice(0,3);
+    return add(v,mul(cross(u,add(cross(u,v),mul(v,q[3]))),2));
+  }
+  function attitude(h,p,b) {
+    return qmul(qmul(qaxis([0,1,0],-h),qaxis([1,0,0],p)),qaxis([0,0,1],b));
+  }
+  function matrix(p=[0,0,0],q=[0,0,0,1],s=[1,1,1]) {
+    const [x,y,z,w]=q,[sx,sy,sz]=s;
+    return new Float32Array([
+      (1-2*y*y-2*z*z)*sx,(2*x*y+2*w*z)*sx,(2*x*z-2*w*y)*sx,0,
+      (2*x*y-2*w*z)*sy,(1-2*x*x-2*z*z)*sy,(2*y*z+2*w*x)*sy,0,
+      (2*x*z+2*w*y)*sz,(2*y*z-2*w*x)*sz,(1-2*x*x-2*y*y)*sz,0,
+      p[0],p[1],p[2],1
+    ]);
+  }
+  function mmul(a,b) {
+    const o=new Float32Array(16);
+    for(let j=0;j<4;j++)
+      for(let i=0;i<4;i++)
+        for(let k=0;k<4;k++) o[j*4+i]+=a[k*4+i]*b[j*4+k];
+    return o;
+  }
+  function transform(m,p,w=1) {
+    return [
+      m[0]*p[0]+m[4]*p[1]+m[8]*p[2]+m[12]*w,
+      m[1]*p[0]+m[5]*p[1]+m[9]*p[2]+m[13]*w,
+      m[2]*p[0]+m[6]*p[1]+m[10]*p[2]+m[14]*w
+    ];
+  }
+  function perspective(fov,aspect,near,far) {
+    const f=1/Math.tan(fov/2),d=near-far;
+    return new Float32Array([
+      f/aspect,0,0,0,0,f,0,0,
+      0,0,(far+near)/d,-1,0,0,2*far*near/d,0
+    ]);
+  }
+  function lookAt(eye,target,up) {
+    const z=norm(sub(eye,target));
+    let x=norm(cross(up,z));
+    if(len(x)<.01)x=[1,0,0];
+    const y=cross(z,x);
+    return {
+      matrix:new Float32Array([
+        x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,
+        -dot(x,eye),-dot(y,eye),-dot(z,eye),1
+      ]),
+      right:x,up:y,forward:mul(z,-1)
+    };
+  }
+
+  function shader(kind,source) {
+    const s=gl.createShader(kind);
+    gl.shaderSource(s,source);gl.compileShader(s);
+    if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))
+      throw new Error(gl.getShaderInfoLog(s));
+    return s;
+  }
+  function program(vs,fs) {
+    const p=gl.createProgram();
+    const v=shader(gl.VERTEX_SHADER,vs),f=shader(gl.FRAGMENT_SHADER,fs);
+    gl.attachShader(p,v);gl.attachShader(p,f);gl.linkProgram(p);
+    if(!gl.getProgramParameter(p,gl.LINK_STATUS))
+      throw new Error(gl.getProgramInfoLog(p));
+    gl.deleteShader(v);gl.deleteShader(f);
+    return p;
+  }
+
+  const sceneProgram=program(`
+    attribute vec3 aPosition;
+    attribute vec3 aNormal;
+    attribute vec3 aColor;
+    uniform mat4 uModel;
+    uniform mat4 uVP;
+    uniform mat3 uNormal;
+    uniform vec3 uEye;
+    uniform vec3 uSun;
+    uniform vec3 uTint;
+    uniform float uDay;
+    varying vec3 vColor;
+    varying float vDistance;
+    void main(){
+      vec4 world=uModel*vec4(aPosition,1.0);
+      vec3 n=normalize(uNormal*aNormal);
+      float light=0.22+uDay*0.36+max(dot(n,uSun),0.0)*(0.12+uDay*0.5);
+      vColor=aColor*uTint*light;
+      vDistance=length(world.xyz-uEye);
+      gl_Position=uVP*world;
+    }
+  `,`
+    precision mediump float;
+    uniform vec3 uFog;
+    uniform vec2 uFogRange;
+    uniform float uAlpha;
+    uniform float uEmission;
+    varying vec3 vColor;
+    varying float vDistance;
+    void main(){
+      float fog=smoothstep(uFogRange.x,uFogRange.y,vDistance);
+      gl_FragColor=vec4(mix(vColor*(1.0+uEmission),uFog,fog),uAlpha);
+    }
+  `);
+
+  const skyProgram=program(`
+    attribute vec2 aPosition;
+    varying vec2 vUV;
+    void main(){
+      vUV=aPosition;
+      gl_Position=vec4(aPosition,0.9999,1.0);
+    }
+  `,`
+    precision mediump float;
+    varying vec2 vUV;
+    uniform vec3 uRight,uUp,uForward,uSun;
+    uniform vec3 uHorizon,uZenith;
+    uniform float uAspect,uFov,uDay,uStorm;
+    void main(){
+      vec3 ray=normalize(uForward+uRight*vUV.x*uAspect*uFov+uUp*vUV.y*uFov);
+      vec3 color=mix(uHorizon,uZenith,pow(max(ray.y,0.0),0.55));
+      float sun=max(dot(ray,uSun),0.0);
+      color+=vec3(1.0,0.73,0.42)*pow(sun,430.0)*(1.0-uStorm*0.85);
+      color+=vec3(0.23,0.14,0.07)*pow(sun,16.0)*uDay*(1.0-uStorm);
+      vec2 cell=floor(ray.xz*700.0/max(0.2,abs(ray.y)));
+      float star=fract(sin(dot(cell,vec2(12.9898,78.233)))*43758.5453);
+      color+=vec3(step(0.9985,star)*(1.0-uDay)*smoothstep(0.0,0.3,ray.y));
+      gl_FragColor=vec4(color,1.0);
+    }
+  `);
+
+  const S={},K={};
+  for(const n of ["aPosition","aNormal","aColor"])
+    S[n]=gl.getAttribLocation(sceneProgram,n);
+  for(const n of ["uModel","uVP","uNormal","uEye","uSun","uTint","uDay",
+    "uFog","uFogRange","uAlpha","uEmission"])
+    S[n]=gl.getUniformLocation(sceneProgram,n);
+  K.aPosition=gl.getAttribLocation(skyProgram,"aPosition");
+  for(const n of ["uRight","uUp","uForward","uSun","uHorizon","uZenith",
+    "uAspect","uFov","uDay","uStorm"])
+    K[n]=gl.getUniformLocation(skyProgram,n);
+
+  const skyBuffer=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,skyBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+
+  class Geometry {
+    constructor(){this.p=[];this.n=[];this.c=[];this.i=[]}
+    vertex(p,n,c) {
+      const index=this.p.length/3;
+      this.p.push(...p);this.n.push(...n);this.c.push(...c);
+      return index;
+    }
+    triangle(a,b,c,color=[1,1,1]) {
+      const n=norm(cross(sub(b,a),sub(c,a))),i=this.p.length/3;
+      this.vertex(a,n,color);this.vertex(b,n,color);this.vertex(c,n,color);
+      this.i.push(i,i+1,i+2);
+    }
+    append(g,m=matrix(),color=[1,1,1]) {
+      const offset=this.p.length/3;
+      const axes=[
+        norm([m[0],m[1],m[2]]),norm([m[4],m[5],m[6]]),norm([m[8],m[9],m[10]])
+      ];
+      for(let i=0;i<g.p.length;i+=3) {
+        const n=g.n.slice(i,i+3);
+        const wn=norm(add(add(mul(axes[0],n[0]),mul(axes[1],n[1])),mul(axes[2],n[2])));
+        this.vertex(transform(m,g.p.slice(i,i+3)),wn,
+          [g.c[i]*color[0],g.c[i+1]*color[1],g.c[i+2]*color[2]]);
+      }
+      for(const i of g.i)this.i.push(i+offset);
+      return this;
+    }
+  }
+
+  function makeBox() {
+    const g=new Geometry();
+    const faces=[
+      [[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]],
+      [[1,-1,-1],[-1,-1,-1],[-1,1,-1],[1,1,-1]],
+      [[1,-1,1],[1,-1,-1],[1,1,-1],[1,1,1]],
+      [[-1,-1,-1],[-1,-1,1],[-1,1,1],[-1,1,-1]],
+      [[-1,1,1],[1,1,1],[1,1,-1],[-1,1,-1]],
+      [[-1,-1,-1],[1,-1,-1],[1,-1,1],[-1,-1,1]]
+    ];
+    for(const f of faces){
+      g.triangle(f[0],f[1],f[2]);g.triangle(f[0],f[2],f[3]);
+    }
+    return g;
+  }
+  function makeSphere(slices=12,rings=8) {
+    const g=new Geometry();
+    for(let y=0;y<=rings;y++) {
+      const a=y/rings*PI;
+      for(let x=0;x<=slices;x++) {
+        const b=x/slices*TAU;
+        const p=[Math.sin(a)*Math.cos(b),Math.cos(a),Math.sin(a)*Math.sin(b)];
+        g.vertex(p,p,[1,1,1]);
+      }
+    }
+    for(let y=0;y<rings;y++)
+      for(let x=0;x<slices;x++){
+        const a=y*(slices+1)+x,b=a+slices+1;
+        g.i.push(a,b,a+1,b,b+1,a+1);
+      }
+    return g;
+  }
+  function makeTube(profile,slices=14) {
+    const g=new Geometry();
+    for(let j=0;j<profile.length;j++){
+      const [z,rx,ry]=profile[j];
+      const previous=profile[Math.max(0,j-1)];
+      const next=profile[Math.min(profile.length-1,j+1)];
+      const dz=next[0]-previous[0]||1;
+      for(let i=0;i<=slices;i++){
+        const a=i/slices*TAU,c=Math.cos(a),s=Math.sin(a);
+        const slope=((next[1]-previous[1])*c*c+(next[2]-previous[2])*s*s)/dz;
+        g.vertex([rx*c,ry*s,z],norm([c,s,-slope]),[1,1,1]);
+      }
+    }
+    for(let j=0;j<profile.length-1;j++)
+      for(let i=0;i<slices;i++){
+        const a=j*(slices+1)+i,b=a+slices+1;
+        g.i.push(a,a+1,b,b,a+1,b+1);
+      }
+    return g;
+  }
+  function makeWing(points,thickness=.12) {
+    const g=new Geometry();
+    const top=points.map(p=>[p[0],thickness,p[1]]);
+    const bottom=points.map(p=>[p[0],-thickness,p[1]]);
+    for(let i=1;i<points.length-1;i++){
+      g.triangle(top[0],top[i+1],top[i]);
+      g.triangle(bottom[0],bottom[i],bottom[i+1]);
+    }
+    for(let i=0;i<points.length;i++){
+      const j=(i+1)%points.length;
+      g.triangle(top[i],top[j],bottom[j]);
+      g.triangle(top[i],bottom[j],bottom[i]);
+    }
+    return g;
+  }
+  function makeCone() {
+    const g=new Geometry();
+    for(let i=0;i<9;i++){
+      const a=i/9*TAU,b=(i+1)/9*TAU;
+      g.triangle([Math.cos(a),0,Math.sin(a)],[0,1,0],[Math.cos(b),0,Math.sin(b)]);
+    }
+    return g;
+  }
+  function upload(g) {
+    const mesh={count:g.i.length};
+    for(const [k,data] of [["p",g.p],["n",g.n],["c",g.c]]){
+      mesh[k]=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,mesh[k]);
+      gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.STATIC_DRAW);
+    }
+    mesh.i=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,mesh.i);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(g.i),gl.STATIC_DRAW);
+    return mesh;
+  }
+  function dispose(mesh) {
+    for(const key of ["p","n","c","i"])gl.deleteBuffer(mesh[key]);
+  }
+
+  const raw={
+    box:makeBox(),sphere:makeSphere(),cone:makeCone(),
+    cylinder:makeTube([[-1,1,1],[1,1,1]])
+  };
+  const meshes={};
+  for(const key of Object.keys(raw))meshes[key]=upload(raw[key]);
+
+  function draw(mesh,model,color=[1,1,1],alpha=1,emission=0) {
+    if(!mesh.count)return;
+    gl.uniformMatrix4fv(S.uModel,false,model);
+    const normal=new Float32Array(9);
+    for(let i=0;i<3;i++)
+      normal.set(norm([model[i*4],model[i*4+1],model[i*4+2]]),i*3);
+    gl.uniformMatrix3fv(S.uNormal,false,normal);
+    gl.uniform3fv(S.uTint,color);gl.uniform1f(S.uAlpha,alpha);
+    gl.uniform1f(S.uEmission,emission);
+    for(const [key,name] of [["p","aPosition"],["n","aNormal"],["c","aColor"]]){
+      gl.bindBuffer(gl.ARRAY_BUFFER,mesh[key]);
+      gl.enableVertexAttribArray(S[name]);
+      gl.vertexAttribPointer(S[name],3,gl.FLOAT,false,0,0);
+    }
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,mesh.i);
+    gl.drawElements(gl.TRIANGLES,mesh.count,gl.UNSIGNED_SHORT,0);
+  }
+
+  const types={
+    trainer:{
+      name:"SKYLARK S-1",mass:1100,area:16,thrust:3100,maxCL:1.5,
+      cruise:52,maxSpeed:88,pitchRate:.65,rollRate:1.25,
+      maxBank:.95,pitchAuthority:.26,
+      clearance:1.5,camera:23,cockpit:[0,1.2,-1.65],fixedGear:true,span:7
+    },
+    fighter:{
+      name:"FALCON F-9",mass:7400,area:28,thrust:45000,maxCL:1.6,
+      cruise:180,maxSpeed:340,pitchRate:.95,rollRate:2.3,
+      maxBank:1.35,pitchAuthority:.34,
+      clearance:2.1,camera:35,cockpit:[0,1.5,-3.2],fixedGear:false,span:6.5
+    },
+    airliner:{
+      name:"AURORA A-220",mass:47000,area:115,thrust:155000,maxCL:1.85,
+      cruise:185,maxSpeed:270,pitchRate:.32,rollRate:.5,
+      maxBank:.6,pitchAuthority:.18,
+      clearance:4.2,camera:76,cockpit:[0,2.7,-15],fixedGear:false,span:17
+    }
+  };
+  for(const t of Object.values(types)){
+    t.stall=Math.sqrt(2*t.mass*GRAVITY/(1.225*t.area*t.maxCL));
+    t.rotate=t.stall*1.12;
+  }
+
+  function buildPlane(kind) {
+    const body=new Geometry(),gear=new Geometry();
+    const white=[.9,.94,.97],blue=[.08,.53,.71];
+    const gray=[.54,.62,.71],dark=[.07,.13,.2],glass=[.07,.32,.46];
+
+    const part=(g,r,p,s,c,q=[0,0,0,1])=>g.append(r,matrix(p,q,s),c);
+    const box=(p,s,c,q)=>part(body,raw.box,p,s,c,q);
+    const sphere=(p,s,c)=>part(body,raw.sphere,p,s,c);
+    const wing=(points,y,c,thickness=.12)=>
+      body.append(makeWing(points,thickness),matrix([0,y,0]),c);
+
+    function fin(x,z,height,width,color,tilt=0) {
+      const shape=makeWing([[0,-width/2],[height,width*.1],[height*.72,width/2],[0,width/2]],.08);
+      body.append(shape,matrix([x,.3,z],
+        qmul(qaxis([0,0,1],PI/2),qaxis([1,0,0],tilt))),color);
+    }
+    function wheel(x,z,y,r) {
+      part(gear,raw.box,[x,y*.43,z],[.075,Math.abs(y)*.56,.075],gray);
+      part(gear,raw.cylinder,[x,y,z],[r,r,.15],dark,qaxis([0,1,0],PI/2));
+      part(gear,raw.cylinder,[x+.16,y,z],[r*.55,r*.55,.02],gray,qaxis([0,1,0],PI/2));
+    }
+
+    if(kind==="trainer"){
+      body.append(makeTube([
+        [-5.1,.1,.1],[-4.6,.55,.55],[-2,.72,.7],[1,.63,.7],[4,.22,.28],[5,.05,.08]
+      ]),matrix(),white);
+      sphere([0,.66,-1.1],[.62,.62,1.42],glass);
+      wing([[-.6,-1.7],[-7,-1.1],[-7,1.2],[-.6,1.2]],.74,white);
+      wing([[.6,-1.7],[7,-1.1],[7,1.2],[.6,1.2]],.74,white);
+      wing([[-.2,3.7],[-2.8,3.95],[-2.8,4.8],[-.2,4.7]],.08,blue);
+      wing([[.2,3.7],[2.8,3.95],[2.8,4.8],[.2,4.7]],.08,blue);
+      fin(0,4.15,1.8,1.7,blue);
+      box([0,-.03,-3.45],[.72,.09,.85],blue);
+      for(const side of [-1,1]){
+        box([side*2.7,-.14,.2],[.045,1.32,.045],gray,qaxis([0,0,1],side*.93));
+        box([side*5,.88,.9],[1.3,.035,.12],blue);
+      }
+      wheel(-1.25,.65,-1.2,.3);
+      wheel(1.25,.65,-1.2,.3);
+      wheel(0,-3.15,-1.26,.24);
+    }else if(kind==="fighter"){
+      body.append(makeTube([
+        [-9.5,.01,.01],[-6.7,.65,.55],[-2,1.05,.95],
+        [2,1.1,.72],[5.6,.82,.62],[7,.64,.55]
+      ]),matrix(),gray);
+      sphere([0,.86,-3.2],[.68,.76,1.7],glass);
+      for(const side of [-1,1]){
+        wing([[side*.7,-1.5],[side*6.5,3],[side*5.8,4.5],[side*.7,3.2]],0,gray);
+        wing([[side*.5,4],[side*3.1,5.2],[side*2.8,6.3],[side*.5,5.8]],.15,gray);
+        box([side*1.15,-.35,-.55],[.45,.45,1.45],dark);
+        fin(side*.74,4.8,2.5,2.6,gray,-side*.22);
+        box([side*3.5,-.3,2.6],[.13,.13,1.3],[.8,.84,.86]);
+        sphere([side*3.5,-.3,1.2],[.13,.13,.25],white);
+      }
+      body.append(makeTube([[6.7,.67,.56],[7.25,.54,.48]]),matrix(),dark);
+      wheel(-1.35,1.8,-1.75,.35);
+      wheel(1.35,1.8,-1.75,.35);
+      wheel(0,-4.2,-1.82,.28);
+    }else{
+      body.append(makeTube([
+        [-21,.03,.03],[-19,1.3,1.3],[-15,2.05,2.1],
+        [-8,2.15,2.15],[10,2.1,2.1],[16,1.3,1.4],[20,.15,.22]
+      ],20),matrix(),white);
+      box([0,.7,-18.45],[1.15,.4,.13],glass);
+      box([0,-1.25,-1],[1.95,.2,14],blue);
+      for(const side of [-1,1]){
+        wing([[side*1.6,-5],[side*17,3],[side*16.2,5.7],[side*1.6,2]],-.5,white,.24);
+        wing([[side*.6,14],[side*7.1,17],[side*6.5,19],[side*.6,17]],.7,white,.18);
+        body.append(makeTube([
+          [-4.5,.75,.75],[-4.1,1.1,1.1],[-.3,1,1],[.8,.7,.7]
+        ]),matrix([side*5.9,-2.3,0]),white);
+        sphere([side*5.9,-2.3,-4.15],[.8,.8,.11],dark);
+        box([side*5.9,-1.25,-1.5],[.14,.9,1],gray);
+        for(let i=0;i<18;i++)
+          box([side*2.105,.75,-12+i*1.45],[.035,.19,.23],glass);
+        wheel(side*2,2.6,-3.65,.55);
+        wheel(side*2,3.6,-3.65,.55);
+        box([side*16.6,.45,4],[.09,.9,.42],blue,qaxis([0,0,1],side*.28));
+      }
+      fin(0,16.2,7,6,blue);
+      wheel(0,-14,-3.72,.48);
+    }
+    return {body:upload(body),gear:upload(gear)};
+  }
+  const planes={
+    trainer:buildPlane("trainer"),
+    fighter:buildPlane("fighter"),
+    airliner:buildPlane("airliner")
+  };
+
+  const cfg={
+    time:14,weather:"clear",wind:2,quality:"medium",
+    easy:true,assist:true,sound:true,targets:true,infiniteFuel:true,
+    autoAltitude:1200,spawnAltitude:800,sensitivity:1
+  };
+  try{
+    const saved=JSON.parse(localStorage.getItem("go-fly-v2-settings")||"null");
+    if(saved&&typeof saved==="object")
+      for(const k of Object.keys(cfg))
+        if(typeof saved[k]===typeof cfg[k] &&
+          (typeof saved[k]!=="number"||Number.isFinite(saved[k])))
+          cfg[k]=saved[k];
+  }catch(_){}
+  cfg.time=clamp(cfg.time,0,23.9);cfg.wind=clamp(cfg.wind,0,25);
+  cfg.autoAltitude=clamp(cfg.autoAltitude,100,12000);
+  cfg.spawnAltitude=clamp(cfg.spawnAltitude,100,10000);
+  cfg.sensitivity=clamp(cfg.sensitivity,.5,1.5);
+  if(!["clear","cloudy","haze","storm"].includes(cfg.weather))cfg.weather="clear";
+  if(!["low","medium","high"].includes(cfg.quality))cfg.quality="medium";
+  function saveSettings(){
+    try{localStorage.setItem("go-fly-v2-settings",JSON.stringify(cfg))}catch(_){}
+  }
+
+  function hash(x,z){
+    let n=Math.imul(x|0,374761393)^Math.imul(z|0,668265263);
+    n=Math.imul(n^(n>>>13),1274126177);
+    return ((n^(n>>>16))>>>0)/4294967295;
+  }
+  function noise(x,z){
+    const ix=Math.floor(x),iz=Math.floor(z);
+    let fx=x-ix,fz=z-iz;
+    fx=fx*fx*(3-2*fx);fz=fz*fz*(3-2*fz);
+    return mix(mix(hash(ix,iz),hash(ix+1,iz),fx),
+      mix(hash(ix,iz+1),hash(ix+1,iz+1),fx),fz);
+  }
+  function rawHeight(x,z){
+    const continent=noise(x/7500+17,z/7500+29);
+    const mountains=Math.pow(clamp((continent-.36)*2.1,0,1),2)*1900;
+    const hills=(noise(x/1400+80,z/1400-30)-.5)*140;
+    const detail=(noise(x/420,z/420)-.5)*24;
+    const natural=-34+mountains+hills+detail;
+    const airportDistance=Math.max(Math.abs(x)/430,Math.abs(z)/1700);
+    return mix(8,natural,smooth(.76,1.45,airportDistance));
+  }
+
+  const CELL=70,TILE=CELL*16;
+  // 碰撞高度与地形三角网格使用同一插值，避免视觉地面与判定不一致。
+  function height(x,z){
+    const gx=Math.floor(x/CELL),gz=Math.floor(z/CELL);
+    const fx=x/CELL-gx,fz=z/CELL-gz;
+    const x0=gx*CELL,z0=gz*CELL;
+    const a=rawHeight(x0,z0),b=rawHeight(x0+CELL,z0);
+    const c=rawHeight(x0,z0+CELL),d=rawHeight(x0+CELL,z0+CELL);
+    return fx+fz<=1
+      ? a+(b-a)*fx+(c-a)*fz
+      : d+(c-d)*(1-fx)+(b-d)*(1-fz);
+  }
+  const groundHeight=(x,z)=>Math.max(0,height(x,z));
+
+  function terrainColor(x,z,h){
+    const n=noise(x/500+3,z/500+8);
+    if(h<3)return [.42,.46,.32];
+    if(h>1100){
+      const snow=smooth(1100,1550,h);
+      return [mix(.47,.94,snow),mix(.5,.96,snow),mix(.49,.98,snow)];
+    }
+    if(h>650)return [.36+n*.13,.39+n*.11,.3+n*.1];
+    return [.15+n*.17,.29+n*.2,.15+n*.11];
+  }
+
+  const tiles=new Map();
+  let tileQueue=[],tileCenter="";
+  let selected="trainer",type=types.trainer;
+  let flight,started=false,paused=false,crashed=false,activeModal="";
+  let simTime=0,crashTime=0,crashReason="";
+  let guidedLanding=null,landingBrake=0,landingAssistActive=false;
+  let viewMode=0,orbitYaw=.35,orbitPitch=.28;
+  let cameraOffset=[0,8,23],vp=matrix();
+  let bullets=[],particles=[],fireTimer=0;
+  let lessonOpen=false,lessonStep=0;
+  let toastUntil=0;
+
+  const keys=new Set();
+  const touch={pitch:0,roll:0,yaw:0,fire:false,brake:false};
+  const targets=Array.from({length:7},(_,i)=>({
+    p:[(i%2?1:-1)*(180+i*75),140+i*70,-1500-i*490],
+    active:true,respawn:0
+  }));
+
+  function createTile(tx,tz){
+    const terrain=new Geometry(),decor=new Geometry(),buildings=[];
+    const x0=tx*TILE,z0=tz*TILE,res=16;
+    for(let z=0;z<=res;z++)
+      for(let x=0;x<=res;x++){
+        const wx=x0+x*CELL,wz=z0+z*CELL,h=rawHeight(wx,wz);
+        const n=norm([rawHeight(wx-4,wz)-rawHeight(wx+4,wz),8,
+          rawHeight(wx,wz-4)-rawHeight(wx,wz+4)]);
+        terrain.vertex([x*CELL,h,z*CELL],n,terrainColor(wx,wz,h));
+      }
+    for(let z=0;z<res;z++)
+      for(let x=0;x<res;x++){
+        const a=z*(res+1)+x,b=a+res+1;
+        terrain.i.push(a,b,a+1,b,b+1,a+1);
+      }
+
+    const count=cfg.quality==="high"?44:cfg.quality==="low"?14:28;
+    for(let i=0;i<count;i++){
+      const lx=hash(tx*91+i,tz*137+13)*TILE;
+      const lz=hash(tx*71-i,tz*67+91)*TILE;
+      const wx=x0+lx,wz=z0+lz,h=height(wx,wz);
+      if(h<4||h>900||(Math.abs(wx)<250&&Math.abs(wz)<1700))continue;
+      const size=8+hash(tx+i*4,tz+9)*13;
+      decor.append(raw.box,matrix([lx,h+size*.26,lz],[0,0,0,1],[.65,size*.26,.65]),[.27,.19,.12]);
+      decor.append(raw.cone,matrix([lx,h+size*.15,lz],[0,0,0,1],[size*.34,size,size*.34]),[.12,.3,.17]);
+      decor.append(raw.cone,matrix([lx,h+size*.55,lz],[0,0,0,1],[size*.25,size*.72,size*.25]),[.16,.37,.2]);
+    }
+    for(let i=0;i<4;i++){
+      const lx=hash(tx*43+i,tz*73+7)*TILE,lz=hash(tx*23-i,tz*47+4)*TILE;
+      const wx=x0+lx,wz=z0+lz,h=height(wx,wz);
+      if(h<5||h>480||(Math.abs(wx)<430&&Math.abs(wz)<1800))continue;
+      const size=10+hash(tx+i,tz-23)*13;
+      const sx=size,sy=size*.43,sz=size*.75;
+      decor.append(raw.box,matrix([lx,h+sy,lz],[0,0,0,1],[sx,sy,sz]),[.69,.65,.54]);
+      decor.append(raw.box,matrix([lx,h+sy*2+.65,lz],[0,0,0,1],[sx*1.04,.65,sz*1.05]),[.4,.23,.19]);
+      buildings.push({p:[wx,h+sy,wz],s:[sx,sy,sz]});
+    }
+    return {tx,tz,x:x0,z:z0,terrain:upload(terrain),decor:upload(decor),buildings};
+  }
+
+  function refreshTiles(force=false){
+    const tx=Math.floor(flight.p[0]/TILE),tz=Math.floor(flight.p[2]/TILE);
+    const radius=cfg.quality==="high"?4:3,key=tx+","+tz+","+radius;
+    if(!force&&key===tileCenter)return;
+    tileCenter=key;tileQueue=[];
+    for(let z=-radius;z<=radius;z++)
+      for(let x=-radius;x<=radius;x++)
+        if(!tiles.has((tx+x)+","+(tz+z)))tileQueue.push([tx+x,tz+z]);
+    tileQueue.sort((a,b)=>
+      (a[0]-tx)**2+(a[1]-tz)**2-((b[0]-tx)**2+(b[1]-tz)**2));
+    for(const [id,t]of tiles)
+      if(Math.abs(t.tx-tx)>radius+1||Math.abs(t.tz-tz)>radius+1){
+        dispose(t.terrain);dispose(t.decor);tiles.delete(id);
+      }
+  }
+  function rebuildTiles(){
+    for(const t of tiles.values()){dispose(t.terrain);dispose(t.decor)}
+    tiles.clear();tileCenter="";refreshTiles(true);
+  }
+
+  function makeAirport(){
+    const g=new Geometry();
+    const b=(p,s,c)=>g.append(raw.box,matrix(p,[0,0,0,1],s),c);
+    b([0,8.04,0],[36,.04,1200],[.15,.18,.19]);
+    b([-75,8.035,50],[18,.025,1060],[.3,.31,.29]);
+    b([-135,8.03,450],[76,.02,280],[.34,.36,.35]);
+    b([-53,8.06,700],[39,.02,12],[.27,.29,.29]);
+    for(let z=-1120;z<1150;z+=120){
+      b([0,8.14,z],[.8,.02,20],[.94,.93,.84]);
+      b([-34,8.13,z],[.32,.02,44],[.83,.85,.8]);
+      b([34,8.13,z],[.32,.02,44],[.83,.85,.8]);
+    }
+    for(const end of [-1,1])
+      for(let x=-25;x<=25;x+=7)
+        b([x,8.15,end*1090],[1.7,.02,32],[.95,.94,.86]);
+
+    b([-145,19,300],[37,11,60],[.62,.69,.72]);
+    b([-145,31,300],[39,1,62],[.25,.35,.42]);
+    b([-172,29,50],[9,21,9],[.53,.6,.64]);
+    b([-172,52,50],[14,4,14],[.12,.33,.45]);
+    b([-172,57,50],[15,1,15],[.59,.68,.73]);
+    for(const z of [550,740]){
+      b([-155,18,z],[34,10,48],[.54,.61,.66]);
+      b([-119,17,z],[1,9,42],[.1,.19,.27]);
+      b([-155,29,z],[36,1,50],[.23,.34,.43]);
+    }
+    return upload(g);
+  }
+  const airport=makeAirport();
+  const airportBuildings=[
+    {p:[-145,19,300],s:[37,11,60]},
+    {p:[-172,33,50],s:[15,25,15]},
+    {p:[-155,18,550],s:[34,11,48]},
+    {p:[-155,18,740],s:[34,11,48]}
+  ];
+
+  function toast(text,duration=3){
+    $("toast").textContent=text;$("toast").style.opacity="1";
+    toastUntil=performance.now()+duration*1000;
+  }
+
+  let audio=null;
+  function initAudio(){
+    if(audio){audio.ctx.resume().catch(()=>{});return}
+    try{
+      const ctx=new (window.AudioContext||window.webkitAudioContext)();
+      const master=ctx.createGain();master.gain.value=.25;master.connect(ctx.destination);
+      const engine=ctx.createOscillator();engine.type="sawtooth";
+      const filter=ctx.createBiquadFilter();filter.type="lowpass";
+      const engineGain=ctx.createGain();engineGain.gain.value=0;
+      engine.connect(filter);filter.connect(engineGain);engineGain.connect(master);engine.start();
+
+      const buffer=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);
+      const data=buffer.getChannelData(0);
+      for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+      const wind=ctx.createBufferSource();wind.buffer=buffer;wind.loop=true;
+      const windFilter=ctx.createBiquadFilter();windFilter.type="lowpass";windFilter.frequency.value=1400;
+      const windGain=ctx.createGain();windGain.gain.value=0;
+      wind.connect(windFilter);windFilter.connect(windGain);windGain.connect(master);wind.start();
+      audio={ctx,master,engine,filter,engineGain,windGain,buffer};
+    }catch(_){}
+  }
+  function soundBurst(big=false){
+    if(!audio||!cfg.sound)return;
+    const ctx=audio.ctx,source=ctx.createBufferSource(),gain=ctx.createGain(),filter=ctx.createBiquadFilter();
+    source.buffer=audio.buffer;filter.type="lowpass";filter.frequency.value=big?420:1800;
+    const duration=big?1.5:.09;
+    gain.gain.setValueAtTime(big?.8:.18,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+duration);
+    source.connect(filter);filter.connect(gain);gain.connect(audio.master);
+    source.start();source.stop(ctx.currentTime+duration);
+    source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect()};
+  }
+  function updateAudio(){
+    if(!audio)return;
+    const live=started&&!paused&&!activeModal&&!crashed&&cfg.sound;
+    const now=audio.ctx.currentTime;
+    audio.master.gain.setTargetAtTime(cfg.sound?.25:0,now,.1);
+    audio.engine.frequency.setTargetAtTime(
+      (selected==="trainer"?35:65)+flight.throttle*(selected==="trainer"?75:145),now,.1);
+    audio.filter.frequency.setTargetAtTime(350+flight.throttle*1100,now,.1);
+    audio.engineGain.gain.setTargetAtTime(live&&flight.engine?.04+flight.throttle*.15:0,now,.12);
+    audio.windGain.gain.setTargetAtTime(live?clamp(flight.speed/240,0,.7)*.28:0,now,.12);
+  }
+
+  function clearInput(){
+    keys.clear();
+    Object.assign(touch,{pitch:0,roll:0,yaw:0,fire:false,brake:false});
+    $("stick").style.transform="translate(0px,0px)";
+  }
+  function closeModal(){
+    if(activeModal)$(activeModal).classList.add("hidden");
+    activeModal="";clearInput();
+  }
+  function openModal(id){
+    if(activeModal)$(activeModal).classList.add("hidden");
+    activeModal=id;$(id).classList.remove("hidden");clearInput();
+  }
+  function updateLandingButton(){
+    $("landingBtn").innerHTML=guidedLanding
+      ? "接管飞机"
+      : '自动<span class="long">降落</span>';
+  }
+  function reset(mode="ground"){
+    type=types[selected];
+    const air=mode==="air",z=air?2200:850;
+    const q=attitude(0,air?.025:0,0);
+    flight={
+      p:[0,groundHeight(0,z)+(air?cfg.spawnAltitude+type.clearance*(type.fixedGear?1:.4):type.clearance),z],
+      v:[0,0,air?-type.cruise:0],q,h:0,pitch:air?.025:0,bank:0,
+      throttle:air?.58:0,engine:true,takeoffAssist:false,gear:air&&!type.fixedGear?0:1,
+      gearVisual:air&&!type.fixedGear?0:1,flaps:air?0:1,
+      onGround:!air,fuel:100,auto:false,autoHeading:0,
+      speed:air?type.cruise:0,speedBrake:false,alpha:0,stall:false,distance:0,time:0,shots:0,
+      pitchVel:0,bankVel:0,vsTrim:0,holdHeading:0,autoThrottle:false
+    };
+    crashed=false;paused=false;guidedLanding=null;landingBrake=0;
+    landingAssistActive=false;crashTime=0;fireTimer=0;
+    bullets=[];particles=[];clearInput();
+    cameraOffset=[0,type.camera*.28,type.camera];
+    $("crashScreen").classList.add("hidden");
+    $("pauseLabel").classList.add("hidden");
+    $("autoBtn").classList.remove("active");
+    $("levelBtn").classList.toggle("active",cfg.assist);
+    $("planeName").textContent=type.name+" · FREE FLIGHT";
+    $("planeSetting").value=selected;
+    $("throttle").value=Math.round(flight.throttle*100);
+    targets.forEach(t=>{t.active=true;t.respawn=0});
+    updateLandingButton();refreshTiles(true);updateHUD();
+  }
+
+  const lessons=[
+    ["准备起飞","发动机和起飞襟翼已准备好。点左下角“一键起飞”，会自动加速、抬头并爬升至距地 100 米；也可手动推满油门。"],
+    ["沿跑道加速","飞机要先有速度才能飞。用 Q / E 或方向舵轻微修正方向，保持跑道中线。"],
+    ["轻轻抬头","达到参考起飞速度后，轻按 S / ↓ 或下拉摇杆。别一直猛拉，机头抬起一点就够了。"],
+    ["看懂离地高度","右上角大字就是飞机距脚下地面的米数。数字越来越大表示离地更远。爬升稳定后收襟翼和起落架。"],
+    ["自动摆正帮你稳住","默认开启“自动摆正”：松杆就自己回到水平并保持航向，不会再自己一直升或一直降。想持续爬升就按住 S / 下拉摇杆，想平飞就松手。按 L 开关，你的操纵永远优先。"],
+    ["随性飞行","A / D 控制倾斜转弯，V 切换视角，空格或射击按钮可打练习气球。没有任务，想去哪就去哪。"],
+    ["降落：任何平地都可以","踩住 B（或手机“刹车”）减速，把下降率控制在每秒 1—3 米，机翼保持水平就能接地。陆地到处都能降，不需要跑道；不想手动降落就点顶部“自动降落”。"]
+  ];
+  function renderLesson(){
+    $("lesson").classList.toggle("hidden",!started||!lessonOpen);
+    $("lessonCounter").textContent="FLIGHT SCHOOL · "+(lessonStep+1)+" / "+lessons.length;
+    $("lessonTitle").textContent=lessons[lessonStep][0];
+    $("lessonText").textContent=lessons[lessonStep][1]+
+      (lessonStep===1?" 本机型起飞参考："+Math.round(type.rotate*3.6)+" km/h。":"");
+  }
+  function progressLesson(){
+    if(!lessonOpen)return;
+    const gap=groundGap();
+    if(lessonStep===0&&flight.throttle>.85&&flight.flaps>0)lessonStep=1;
+    else if(lessonStep===1&&flight.speed>type.rotate*.93)lessonStep=2;
+    else if(lessonStep===2&&!flight.onGround&&gap>12)lessonStep=3;
+    else if(lessonStep===3&&gap>100)lessonStep=4;
+    else if(lessonStep===4&&flight.shots>0)lessonStep=5;
+    renderLesson();
+  }
+  function start(mode){
+    initAudio();started=true;closeModal();
+    $("startScreen").classList.add("hidden");
+    $("gameUI").classList.remove("hidden");
+    if(mode!=="landing")reset(mode);
+    lessonOpen=mode==="ground";lessonStep=0;renderLesson();
+    if(mode==="landing")startGuidedLanding(true);
+    else toast(mode==="ground"
+      ?"点左下角“一键起飞”，或推满油门自动加速抬头。"
+      :"天空属于你。右上角大字显示距地面高度。",5);
+  }
+  function togglePause(){
+    if(!started||crashed||activeModal)return;
+    paused=!paused;clearInput();updateHUD();
+  }
+  function cycleView(){
+    viewMode=(viewMode+1)%3;
+    $("cockpit").classList.toggle("hidden",viewMode!==1);
+    toast(["追尾视角","驾驶舱视角","环绕视角：拖动画面调整镜头"][viewMode]);
+  }
+  function toggleGear(){
+    if(crashed)return;
+    if(type.fixedGear){toast("这款飞机采用固定起落架，不需要收放。");return}
+    if(flight.onGround){toast("请先起飞，地面不能收起落架。");return}
+    if(guidedLanding){toast("自动降落中，起落架保持放下。");return}
+    flight.gear=flight.gear?0:1;
+    toast(flight.gear?"起落架放下":"起落架收起");
+  }
+  function toggleFlaps(){
+    if(crashed)return;
+    if(guidedLanding){toast("自动降落中，襟翼保持降落档。");return}
+    flight.flaps=(flight.flaps+1)%3;
+    toast("襟翼："+["收起","起飞档","降落档"][flight.flaps]);
+  }
+  function toggleAuto(){
+    if(crashed)return;
+    if(flight.onGround){toast("请先起飞，再启用自动驾驶。");return}
+    guidedLanding=null;updateLandingButton();
+    flight.auto=!flight.auto;flight.autoHeading=flight.h;
+    $("autoBtn").classList.toggle("active",flight.auto);
+    toast(flight.auto
+      ?"自动驾驶：保持航向与距地 "+cfg.autoAltitude+" 米，不会自动避障。"
+      :"已切回手动驾驶。",4);
+  }
+
+  function clearance(){return type.clearance*(.4+.6*flight.gearVisual)}
+  function groundGap(){
+    if(flight.onGround)return 0;
+    return Math.max(0,flight.p[1]-groundHeight(flight.p[0],flight.p[2])-clearance());
+  }
+
+  function burst(p,count=50,power=30){
+    for(let i=0;i<count;i++){
+      const direction=norm([Math.random()*2-1,Math.random()*1.6,Math.random()*2-1]);
+      const lifetime=1.2+Math.random()*2.5;
+      particles.push({
+        p:p.slice(),v:mul(direction,power*(.2+Math.random())),
+        life:lifetime,max:lifetime,size:.35+Math.random()*2.4,
+        color:i%3===0?[.24,.28,.3]:[1,.25+Math.random()*.5,.08]
+      });
+    }
+    if(particles.length>230)particles.splice(0,particles.length-230);
+  }
+  function crash(reason){
+    if(crashed)return;
+    crashed=true;crashTime=simTime;crashReason=reason;
+    flight.auto=false;guidedLanding=null;
+    $("autoBtn").classList.remove("active");updateLandingButton();
+    burst(flight.p,95,selected==="airliner"?65:35);
+    soundBurst(true);toast(reason,4);
+  }
+
+  function fire(){
+    if(crashed||fireTimer>0)return;
+    fireTimer=selected==="fighter"?.075:.14;
+    const f=rotate(flight.q,[0,0,-1]),r=rotate(flight.q,[1,0,0]);
+    const nose=selected==="airliner"?21:selected==="fighter"?9.5:5.3;
+    for(const side of [-1,1])
+      bullets.push({
+        p:add(add(flight.p,mul(f,nose)),mul(r,side*(selected==="airliner"?2.5:1))),
+        v:add(flight.v,mul(f,selected==="fighter"?1000:700)),
+        q:flight.q.slice(),life:2.4
+      });
+    flight.shots++;soundBurst();
+    if(bullets.length>110)bullets.splice(0,bullets.length-110);
+  }
+  function segmentDistance(a,b,p){
+    const d=sub(b,a),t=clamp(dot(sub(p,a),d)/(dot(d,d)||1),0,1);
+    return len(sub(p,add(a,mul(d,t))));
+  }
+  function updateEffects(dt){
+    for(let i=bullets.length-1;i>=0;i--){
+      const b=bullets[i],previous=b.p.slice();
+      b.life-=dt;b.p=add(b.p,mul(b.v,dt));b.v[1]-=GRAVITY*.15*dt;
+      let hit=b.p[1]<=groundHeight(b.p[0],b.p[2]);
+      if(!hit&&cfg.targets)
+        for(const t of targets)
+          if(t.active&&segmentDistance(previous,b.p,t.p)<14){
+            t.active=false;t.respawn=simTime+20;hit=true;
+            burst(t.p,22,18);toast("练习气球命中",1.5);break;
+          }
+      if(hit)burst(b.p,5,5);
+      if(hit||b.life<=0)bullets.splice(i,1);
+    }
+    for(let i=particles.length-1;i>=0;i--){
+      const p=particles[i];p.life-=dt;p.v[1]-=GRAVITY*.4*dt;
+      p.p=add(p.p,mul(p.v,dt));p.v=mul(p.v,Math.exp(-dt*.35));
+      const floor=groundHeight(p.p[0],p.p[2]);
+      if(p.p[1]<floor){p.p[1]=floor+.2;p.v[1]=Math.abs(p.v[1])*.22}
+      if(p.life<=0)particles.splice(i,1);
+    }
+    for(const t of targets)if(!t.active&&simTime>t.respawn)t.active=true;
+  }
+
+  function dirFromHeading(h){return [Math.sin(h),-Math.cos(h)]}
+
+  // 评估某个方向、某个距离上的一小块地能否降落；返回平整度。
+  function spotQuality(dir,dist){
+    const cx=flight.p[0]+dir[0]*dist,cz=flight.p[2]+dir[1]*dist;
+    const base=height(cx,cz);
+    if(base<1)return null;
+    let rough=0;
+    // 落点前后都要平整：前向取样更长，保证滑跑段不会冲进水或撞坡。
+    for(const along of [-80,60,190,320])
+      for(const side of [-45,0,45]){
+        const px=cx+dir[0]*along-dir[1]*side,pz=cz+dir[1]*along+dir[0]*side;
+        const h=height(px,pz);
+        if(h<1)return null;
+        rough+=Math.abs(h-base);
+      }
+    return {x:cx,z:cz,flat:rough/12};
+  }
+
+  // 优先正前方找平地，找不到就向两侧偏转；forced 时只求最平的一块。
+  function planLanding(forced=false){
+    const offsets=forced?[0]:[0,.22,-.22,.45,-.45,.8,-.8,1.2,-1.2,1.8,-1.8];
+    const altAbove=Math.max(30,flight.p[1]-type.clearance-
+      groundHeight(flight.p[0],flight.p[2]));
+    const ideal=clamp(altAbove/.13,900,11000);
+    let best=null;
+    for(const offset of offsets){
+      const dir=dirFromHeading(flight.h+offset);
+      for(const factor of (forced?[1]:[1,.82,1.22,.68,1.45])){
+        const dist=clamp(ideal*factor,900,11000);
+        const spot=spotQuality(dir,dist);
+        if(!spot)continue;
+        if(!forced&&spot.flat>16)continue;
+        const score=spot.flat*4+Math.abs(offset)*1200+Math.abs(dist-ideal)*.3;
+        if(!best||score<best.score)
+          best={dir,dist,spot,score,heading:wrap(flight.h+offset)};
+      }
+    }
+    return best;
+  }
+
+  function startGuidedLanding(demo=false){
+    if(guidedLanding){
+      guidedLanding=null;clearInput();updateLandingButton();
+      toast("已经接管飞机。");return;
+    }
+    initAudio();
+    closeModal();
+    if(demo||crashed||!started)reset("air");
+    if(flight.onGround){toast("飞机已经在地面上了。");return}
+    if(demo){
+      // 演示入口：从 350 米左右的进近高度开始，不用等太久。
+      flight.p[1]=groundHeight(flight.p[0],flight.p[2])+Math.max(260,type.clearance+350);
+      flight.throttle=.5;flight.speed=type.cruise;
+      const demoDir=dirFromHeading(flight.h);
+      flight.v=[demoDir[0]*type.cruise,0,demoDir[1]*type.cruise];
+    }
+    const plan=planLanding();
+    if(!plan){toast("附近找不到可降落的陆地，先飞向陆地再按一次。",5);return}
+    guidedLanding={
+      phase:"turn",heading:plan.heading,dir:plan.dir,
+      target:[plan.spot.x,plan.spot.z],total:Math.max(600,plan.dist),
+      startY:flight.p[1],replans:0,turnTime:0
+    };
+    flight.gear=1;flight.gearVisual=1;flight.flaps=2;flight.auto=false;
+    flight.autoThrottle=false;$("autoBtn").classList.remove("active");
+    flight.holdHeading=flight.h;
+    paused=false;clearInput();updateLandingButton();refreshTiles(true);
+    toast("自动降落：目标在前方约 "+(plan.dist/1000).toFixed(1)+
+      " 公里的平地上，动摇杆可随时接管。",6);
+  }
+
+  function manualInput(){
+    return touch.brake||Math.abs(touch.pitch)+Math.abs(touch.roll)+Math.abs(touch.yaw)>.2
+      ||["KeyW","KeyS","KeyA","KeyD","KeyQ","KeyE","KeyB",
+        "ArrowUp","ArrowDown","ArrowLeft","ArrowRight",
+        "ShiftLeft","ShiftRight","Equal","Minus",
+        "NumpadAdd","NumpadSubtract"].some(k=>keys.has(k));
+  }
+
+  function simulateGuided(dt){
+    const old=flight.p.slice(),guide=guidedLanding;
+    flight.time+=dt;flight.gear=1;flight.gearVisual=1;flight.flaps=2;
+    flight.engine=true;flight.stall=false;
+    const floorY=()=>groundHeight(flight.p[0],flight.p[2])+type.clearance;
+    let speed=Math.hypot(flight.v[0],flight.v[2]);
+
+    if(guide.phase==="turn"){
+      // 先转到落点航向，边转边缓慢下降，始终保持地形余度。
+      guide.turnTime+=dt;
+      const error=wrap(guide.heading-flight.h);
+      const turnRate=clamp(error*1.3,-.42,.42);
+      flight.h=wrap(flight.h+turnRate*dt);
+      flight.bank=clamp(-turnRate*1.2,-.4,.4);
+      speed=Math.max(type.stall*.95,mix(speed,type.stall*1.35,damp(1.2,dt)));
+      const dir=dirFromHeading(flight.h);
+      flight.p[0]+=dir[0]*speed*dt;flight.p[2]+=dir[1]*speed*dt;
+      flight.p[1]=Math.max(flight.p[1]-6*dt,floorY()+25);
+      flight.v=[dir[0]*speed,-6,dir[1]*speed];
+      flight.speed=speed;flight.throttle=.32;
+      flight.pitch=clamp(-.05,-.14,.14);flight.onGround=false;
+      if(Math.abs(error)<.07||guide.turnTime>26){
+        guide.replans++;
+        const plan=planLanding(guide.replans>2);
+        if(plan){
+          guide.dir=plan.dir;guide.heading=plan.heading;
+          guide.target=[plan.spot.x,plan.spot.z];
+          guide.startY=flight.p[1];guide.total=Math.max(500,plan.dist);
+          guide.phase=Math.abs(wrap(guide.heading-flight.h))<.07?"approach":"turn";
+          guide.turnTime=0;
+        }else if(guide.replans>3){
+          toast("附近没有合适的平地，先继续飞行。",4);
+          guidedLanding=null;updateLandingButton();return;
+        }
+      }
+    }else if(guide.phase==="approach"){
+      // 沿约 13% 下滑道飞向落点，下降率上限按速度给足，才能跟住下滑道。
+      speed=Math.max(type.stall*.95,mix(speed,type.stall*1.18,damp(1.6,dt)));
+      const dir=guide.dir;
+      flight.h=guide.heading;
+      flight.p[0]+=dir[0]*speed*dt;flight.p[2]+=dir[1]*speed*dt;
+      const remain=(guide.target[0]-flight.p[0])*dir[0]+
+        (guide.target[1]-flight.p[2])*dir[1];
+      const spotY=groundHeight(guide.target[0],guide.target[1])+type.clearance;
+      const targetY=spotY+Math.max(7,Math.max(0,remain)*.13);
+      const sink=clamp((targetY-flight.p[1])*.35,-12,12);
+      const margin=6*smooth(90,700,Math.max(0,remain));
+      flight.p[1]=clamp(flight.p[1]+sink*dt,floorY()+margin,guide.startY+150);
+      flight.v=[dir[0]*speed,sink,dir[1]*speed];
+      flight.speed=speed;flight.throttle=.2;flight.bank=0;
+      flight.pitch=clamp(Math.atan2(sink,Math.max(speed,1))+.05,-.16,.16);
+      flight.onGround=false;
+      if(remain<=45)guide.phase="flare";
+    }else if(guide.phase==="flare"){
+      // 落点上空贴地：按高度比例下降，保证真正接地。
+      speed=Math.max(type.stall*.88,mix(speed,type.stall*1.02,damp(2,dt)));
+      const dir=guide.dir;
+      flight.h=guide.heading;
+      flight.p[0]+=dir[0]*speed*dt;flight.p[2]+=dir[1]*speed*dt;
+      const above=Math.max(0,flight.p[1]-floorY());
+      const sink=clamp(above*.6,1,12);
+      flight.p[1]=Math.max(floorY(),flight.p[1]-sink*dt);
+      flight.v=[dir[0]*speed,-sink,dir[1]*speed];
+      flight.speed=speed;flight.throttle=.06;flight.bank=0;
+      flight.pitch=clamp(.06,-.14,.14);flight.onGround=false;
+      if(flight.p[1]<=floorY()+.06){
+        flight.p[1]=floorY();flight.v[1]=0;
+        flight.onGround=true;guide.phase="braking";flight.throttle=0;
+        toast("轮胎已经接地，自动刹停中。",4);
+      }
+    }else if(guide.phase==="braking"){
+      speed=Math.max(0,speed-7*dt);
+      const dir=guide.dir;
+      flight.v=[dir[0]*speed,0,dir[1]*speed];
+      flight.speed=speed;
+      flight.p[0]+=dir[0]*speed*dt;flight.p[2]+=dir[1]*speed*dt;
+      flight.p[1]=floorY();
+      flight.pitch=mix(flight.pitch,0,damp(3,dt));
+      flight.throttle=0;flight.onGround=true;flight.bank=0;
+      if(height(flight.p[0],flight.p[2])<0){crash("滑入水面");return}
+      if(speed<.2){
+        flight.v=[0,0,0];flight.speed=0;guidedLanding=null;
+        updateLandingButton();toast("降落完成！现在可以重新加油门起飞。",6);
+      }
+    }
+    flight.q=attitude(flight.h,flight.pitch,flight.bank);
+    flight.distance+=Math.hypot(flight.p[0]-old[0],flight.p[2]-old[2]);
+    if(keys.has("Space")||touch.fire)fire();
+    checkBuildings();refreshTiles();progressLesson();
+  }
+
+  function prepareLandingAssist(dt){
+    landingAssistActive=false;flight.speedBrake=false;
+    if(!cfg.easy||flight.onGround||crashed||flight.auto||guidedLanding||flight.takeoffAssist||flight.v[1]>.6)return;
+    const gap=groundGap();
+    const overLand=height(flight.p[0],flight.p[2])>=0;
+    if(!overLand||gap>520||flight.v[1]<-20)return;
+    // 只在“确实在下降 / 踩了刹车 / 已经放了起落架襟翼”时介入；平飞巡航不会被拉下来。
+    const descending=flight.v[1]<-.3;
+    const braking=keys.has("KeyB")||touch.brake;
+    const configured=flight.gear===1||flight.flaps>0;
+    if(gap>260&&!braking)return;
+    if(!(descending||braking||configured))return;
+
+    landingAssistActive=true;
+    // 自动放起落架与襟翼：只增加阻力与升力，不会让飞机下沉。
+    if(gap<240&&flight.v[1]<.6){
+      if(!type.fixedGear)flight.gear=1;
+      flight.flaps=Math.max(flight.flaps,gap<120?2:1);
+    }
+    // 限制下降率，保证接地柔和。
+    const sinkLimit=gap<10?1.1:gap<30?1.8:gap<70?2.6:gap<160?3.6:5;
+    if(flight.v[1]<-sinkLimit)
+      flight.v[1]=mix(flight.v[1],-sinkLimit,damp(7,dt));
+    // 空速过高或踩刹车时展开减速板，帮助降到进近速度。
+    flight.speedBrake=braking||flight.speed>type.stall*1.5;
+    if(gap<70)flight.bank=mix(flight.bank,0,damp(3,dt));
+  }
+
+  function checkBuildings(){
+    const nearby=[...airportBuildings];
+    const tx=Math.floor(flight.p[0]/TILE),tz=Math.floor(flight.p[2]/TILE);
+    for(let z=-1;z<=1;z++)
+      for(let x=-1;x<=1;x++){
+        const tile=tiles.get((tx+x)+","+(tz+z));
+        if(tile)nearby.push(...tile.buildings);
+      }
+    for(const b of nearby)
+      if(Math.abs(flight.p[0]-b.p[0])<b.s[0]+1&&
+        Math.abs(flight.p[2]-b.p[2])<b.s[2]+1&&
+        Math.abs(flight.p[1]-b.p[1])<b.s[1]+type.clearance*.4){
+        crash("撞击建筑物");break;
+      }
+  }
+
+  function simulate(dt){
+    simTime+=dt;fireTimer=Math.max(0,fireTimer-dt);updateEffects(dt);
+    if(crashed){
+      if(simTime-crashTime>2.1){
+        $("crashInfo").textContent=crashReason+"。本次自由飞行 "+
+          (flight.distance/1000).toFixed(1)+" km，持续 "+
+          Math.floor(flight.time/60)+" 分 "+Math.floor(flight.time%60)+" 秒。";
+        $("crashScreen").classList.remove("hidden");
+      }
+      return;
+    }
+    if(guidedLanding){
+      if(manualInput()){
+        guidedLanding=null;updateLandingButton();
+        toast("手动输入已接管飞机。");
+      }else{
+        simulateGuided(dt);return;
+      }
+    }
+
+    flight.time+=dt;
+    if(flight.takeoffAssist&&!flight.onGround){
+      if(manualInput()||flight.throttle<.5||groundGap()>100){
+        flight.takeoffAssist=false;flight.vsTrim=0;flight.holdHeading=flight.h;
+        toast("起飞辅助结束，已交给你操纵。松杆自动平飞。",4);
+      }
+    }
+    // 油门是飞行员的：任何手动输入都会立刻取消自动油门。
+    if(keys.has("ShiftLeft")||keys.has("ShiftRight")||
+      keys.has("Equal")||keys.has("NumpadAdd")){
+      flight.throttle+=dt*.32;landingBrake=0;flight.autoThrottle=false;
+    }
+    if(keys.has("Minus")||keys.has("NumpadSubtract")){
+      flight.throttle-=dt*.32;landingBrake=0;flight.autoThrottle=false;
+    }
+    flight.throttle=clamp(flight.throttle,0,1);
+
+    let pitchInput=clamp((keys.has("KeyS")||keys.has("ArrowDown")?1:0)
+      -(keys.has("KeyW")||keys.has("ArrowUp")?1:0)+touch.pitch,-1,1);
+    let rollInput=clamp((keys.has("KeyA")||keys.has("ArrowLeft")?1:0)
+      -(keys.has("KeyD")||keys.has("ArrowRight")?1:0)+touch.roll,-1,1);
+    const yawInput=clamp((keys.has("KeyE")?1:0)-(keys.has("KeyQ")?1:0)+touch.yaw,-1,1);
+
+    if(flight.auto&&(Math.abs(pitchInput)+Math.abs(rollInput)+Math.abs(yawInput)>.2)){
+      flight.auto=false;$("autoBtn").classList.remove("active");
+      toast("你已接管自动驾驶。",2);
+    }
+
+    let forward=rotate(flight.q,[0,0,-1]);
+    let up=rotate(flight.q,[0,1,0]);
+    let right=rotate(flight.q,[1,0,0]);
+
+    const gust=cfg.weather==="storm"?3:cfg.weather==="cloudy"?.7:.15;
+    const wind=[
+      cfg.wind*.82+Math.sin(simTime*.8+flight.p[2]*.001)*gust,
+      Math.sin(simTime*1.3+flight.p[0]*.001)*gust*.35,
+      cfg.wind*.32
+    ];
+    let relative=sub(flight.v,flight.onGround?[0,0,0]:wind);
+    let speed=len(relative);
+    const vf=dot(relative,forward),vu=dot(relative,up);
+    let alpha=speed>3?Math.atan2(-vu,Math.max(1,vf)):0;
+    const density=1.225*Math.exp(-Math.max(0,flight.p[1])/9000);
+    let pressure=.5*density*speed*speed;
+    const desiredCL=type.mass*GRAVITY/Math.max(100,pressure*type.area*Math.max(.3,up[1]));
+    const trimAlpha=clamp((desiredCL-.24-flight.flaps*.28)/4.4,-.22,.22);
+
+    const sens=clamp(cfg.sensitivity,.5,1.5);
+    const maxBank=type.maxBank;
+    const authority=clamp(speed/(type.stall*1.15),.15,1.15);
+    const levelAssist=(cfg.assist||flight.takeoffAssist)&&!flight.onGround&&!flight.auto;
+
+    if(flight.onGround){
+      // 地面：方向舵转向、抬起机头、保持机翼水平。
+      flight.h=wrap(flight.h+yawInput*dt*clamp(speed/15,.2,1)*.48);
+      if(cfg.easy&&flight.throttle>.65&&speed>type.rotate*.90&&pitchInput>=0){
+        flight.takeoffAssist=true;
+      }
+      if(Math.abs(pitchInput)>.05||Math.abs(rollInput)>.05||Math.abs(yawInput)>.05)flight.takeoffAssist=false;
+      if(flight.takeoffAssist){
+        flight.flaps=Math.max(1,flight.flaps);
+        flight.pitch=mix(flight.pitch,.14,damp(1.6,dt));
+      }else flight.pitch=clamp(flight.pitch+pitchInput*type.pitchRate*dt*authority,-.02,.25);
+      flight.bank=0;flight.bankVel=0;flight.pitchVel=0;flight.vsTrim=0;
+      flight.holdHeading=flight.h;
+    }else if(levelAssist){
+      // 自动摆正：用“迎角”做操纵量，速度快慢手感一致，也不会轻轻一动就大幅过载。
+      const gamma=Math.atan2(relative[1],Math.max(1,Math.hypot(relative[0],relative[2])));
+      const alphaPerAccel=type.mass/(Math.max(80,pressure*type.area)*4.4);
+      const holdAuth=clamp((speed-type.stall*.92)/(type.stall*.42),0,1);
+      // 小积分项吃掉残余升降，避免“一直慢慢升/慢慢降”。
+      flight.vsTrim=clamp(flight.vsTrim-flight.v[1]*dt*.5*alphaPerAccel*holdAuth,-.05,.05);
+      const vsAlpha=clamp(-flight.v[1]*1.3*alphaPerAccel*holdAuth,-.18,.18);
+      const stickAlpha=type.pitchAuthority*sens;
+      const alphaCmd=clamp(trimAlpha+vsAlpha+flight.vsTrim+
+        (pitchInput>=0?pitchInput*stickAlpha:pitchInput*stickAlpha*.85),-.22,.35);
+      let pitchCmd=clamp(gamma+alphaCmd,-1.1,1.1);
+      if(flight.takeoffAssist){
+        const climbTarget=selected==="trainer"?4:6;
+        pitchCmd=clamp(gamma+trimAlpha+clamp((climbTarget-flight.v[1])*1.4*alphaPerAccel,-.08,.12),-.08,.28);
+      }
+      let bankCmd;
+
+      if(Math.abs(rollInput)>.03){
+        bankCmd=rollInput*maxBank;
+        flight.holdHeading=flight.h;         // 转弯时持续更新目标航向
+      }else{
+        bankCmd=clamp(-wrap(flight.holdHeading-flight.h)*1.15,-maxBank*.75,maxBank*.75)
+          -flight.bankVel*.35;
+      }
+      if(Math.abs(yawInput)>.05)flight.holdHeading=flight.h;
+      bankCmd=clamp(bankCmd+yawInput*.12,-maxBank,maxBank);
+
+      const maxPitchVel=type.pitchRate*1.5*authority*sens;
+      const maxBankVel=type.rollRate*1.35*authority*sens;
+      flight.pitchVel=mix(flight.pitchVel,
+        clamp((pitchCmd-flight.pitch)*3.2,-maxPitchVel,maxPitchVel),damp(9,dt));
+      flight.pitch=clamp(flight.pitch+flight.pitchVel*dt,-1.25,1.25);
+      flight.bankVel=mix(flight.bankVel,
+        clamp((bankCmd-flight.bank)*3.4,-maxBankVel,maxBankVel),damp(9,dt));
+      flight.bank=wrap(flight.bank+flight.bankVel*dt);
+    }else{
+      // 关闭自动摆正：直接角速率操纵，保留真实难度。
+      flight.pitch=clamp(flight.pitch+pitchInput*type.pitchRate*authority*dt,-1.43,1.43);
+      flight.bank=wrap(flight.bank+rollInput*type.rollRate*authority*dt);
+    }
+
+    if(flight.auto){
+      // 自动驾驶：保持距脚下地形高度，目标用“垂直速度 → 迎角”换算，速度快慢都稳。
+      const gamma=Math.atan2(relative[1],Math.max(1,Math.hypot(relative[0],relative[2])));
+      const alphaPerAccel=type.mass/(Math.max(80,pressure*type.area)*4.4);
+      const targetY=groundHeight(flight.p[0],flight.p[2])+clearance()+cfg.autoAltitude;
+      const vyCmd=clamp((targetY-flight.p[1])*.12,-8,8);
+      const aCmd=clamp((vyCmd-flight.v[1])*1.6,-3.5,4);
+      const alphaCmd=clamp(trimAlpha+aCmd*alphaPerAccel,-.06,.32);
+      const desiredPitch=clamp(gamma+alphaCmd,-.3,.4);
+      const desiredBank=clamp(-wrap(flight.autoHeading-flight.h)*1.2,-.48,.48);
+      flight.pitchVel=mix(flight.pitchVel,
+        clamp((desiredPitch-flight.pitch)*3.2,-type.pitchRate*1.5*authority,type.pitchRate*1.5*authority),
+        damp(9,dt));
+      flight.pitch=clamp(flight.pitch+flight.pitchVel*dt,-1.25,1.25);
+      flight.bankVel=mix(flight.bankVel,
+        clamp((desiredBank-flight.bank)*3.4,-type.rollRate*1.35*authority,type.rollRate*1.35*authority),
+        damp(9,dt));
+      flight.bank=wrap(flight.bank+flight.bankVel*dt);
+      flight.holdHeading=flight.h;
+      flight.autoThrottle=true;
+      flight.throttle=clamp(flight.throttle+(type.cruise-speed)*dt*.0015,.12,1);
+    }else flight.autoThrottle=false;
+
+    if(!flight.onGround){
+      const turn=-GRAVITY*Math.sin(flight.bank)/
+        (Math.max(.3,Math.abs(Math.cos(flight.bank)))*Math.max(25,speed));
+      flight.h=wrap(flight.h+(clamp(turn,-1.1,1.1)+yawInput*.35*authority)*dt);
+    }
+
+    prepareLandingAssist(dt);
+    // 空中按 B / 手机刹车就是展开减速板：只增加阻力，不碰油门。
+    if((keys.has("KeyB")||touch.brake)&&!flight.onGround)flight.speedBrake=true;
+    flight.q=attitude(flight.h,flight.pitch,flight.bank);
+    forward=rotate(flight.q,[0,0,-1]);up=rotate(flight.q,[0,1,0]);right=rotate(flight.q,[1,0,0]);
+
+    relative=sub(flight.v,flight.onGround?[0,0,0]:wind);
+    speed=len(relative);
+    alpha=speed>3?Math.atan2(-dot(relative,up),Math.max(1,dot(relative,forward))):0;
+    pressure=.5*density*speed*speed;
+    let cl=clamp(.24+alpha*4.4+flight.flaps*.28,-type.maxCL,type.maxCL+flight.flaps*.18);
+    const stalled=Math.abs(alpha)>.36||(speed<type.stall*.78&&!flight.onGround);
+    if(Math.abs(alpha)>.36)cl*=Math.max(.22,1-(Math.abs(alpha)-.36)*2);
+    flight.alpha=alpha;flight.stall=stalled;
+
+    const velocityDirection=speed>1?norm(relative):forward;
+    const liftDirection=norm(sub(up,mul(velocityDirection,dot(up,velocityDirection))));
+    const lift=pressure*type.area*cl;
+    const aeroBrake=(flight.speedBrake&&!flight.onGround)?
+      (selected==="airliner"?.09:selected==="fighter"?.075:.1):0;
+    const cd=.027+.047*cl*cl+flight.gear*.016+flight.flaps*.017+
+      (stalled?.12:0)+aeroBrake;
+    const drag=pressure*type.area*cd;
+
+    let thrust=type.thrust*flight.throttle*(flight.engine?1:0);
+    thrust*=1-.28*clamp(speed/type.maxSpeed,0,1);
+    if(selected==="fighter"&&flight.throttle>.92)thrust*=1.32;
+
+    if(!cfg.infiniteFuel&&flight.engine){
+      flight.fuel=Math.max(0,flight.fuel-flight.throttle*dt*(selected==="trainer"?.005:.016));
+      if(!flight.fuel)flight.engine=false;
+    }
+    flight.gearVisual=mix(flight.gearVisual,flight.gear,damp(3,dt));
+
+    let force=add(mul(forward,thrust),mul(velocityDirection,-drag));
+    force=add(force,mul(liftDirection,lift));
+    force=add(force,[0,-type.mass*GRAVITY,0]);
+    force=add(force,mul(right,-dot(relative,right)*type.mass*.65));
+
+    let brake=keys.has("KeyB")||touch.brake;
+    if(landingBrake>0&&flight.onGround){
+      if(flight.throttle>.55)landingBrake=0;
+      else{brake=true;flight.throttle=Math.min(.08,flight.throttle);landingBrake=Math.max(0,landingBrake-dt)}
+    }
+
+    if(flight.onGround){
+      force[1]=0;flight.v[1]=0;
+      const horizontal=Math.hypot(flight.v[0],flight.v[2]);
+      const runway=Math.abs(flight.p[0])<36&&Math.abs(flight.p[2])<1200;
+      const rolling=type.mass*GRAVITY*(brake?.32:runway?.014:.055);
+      if(horizontal>.15){
+        force[0]-=flight.v[0]/horizontal*rolling;
+        force[2]-=flight.v[2]/horizontal*rolling;
+      }
+      const flatForward=norm([forward[0],0,forward[2]]);
+      const sideVelocity=sub(flight.v,mul(flatForward,dot(flight.v,flatForward)));
+      force=add(force,mul(sideVelocity,-type.mass*2.7));
+      if(brake&&horizontal<.8&&thrust<rolling){
+        flight.v=[0,0,0];force=[0,0,0];
+      }
+      if(speed>type.rotate*.92&&forward[1]>.055&&lift>type.mass*GRAVITY*.62){
+        flight.onGround=false;flight.v[1]=Math.max(1,speed*forward[1]*.48);
+        toast("成功离地！看右上角距地面数字，稳定爬升。",4);
+      }
+    }
+
+    flight.v=add(flight.v,mul(force,dt/type.mass));
+    if(landingAssistActive){
+      const gap=groundGap();
+      const limit=gap<10?1.2:gap<35?2.1:3.3;
+      if(flight.v[1]<-limit)flight.v[1]=mix(flight.v[1],-limit,damp(12,dt));
+    }
+    if(flight.onGround&&len(flight.v)<.25&&flight.throttle<.08)flight.v=[0,0,0];
+
+    const previous=flight.p.slice();
+    flight.p=add(flight.p,mul(flight.v,dt));
+    flight.distance+=Math.hypot(flight.p[0]-previous[0],flight.p[2]-previous[2]);
+    flight.speed=len(sub(flight.v,flight.onGround?[0,0,0]:wind));
+
+    const terrain=groundHeight(flight.p[0],flight.p[2]);
+    if(flight.onGround){
+      flight.p[1]=terrain+type.clearance;flight.v[1]=0;
+      if(height(flight.p[0],flight.p[2])<0)crash("飞机驶入水面");
+    }else if(flight.p[1]<=terrain+clearance()){
+      const runway=Math.abs(flight.p[0])<(cfg.easy?74:36)&&Math.abs(flight.p[2])<1200;
+      const landable=height(flight.p[0],flight.p[2])>=0;
+      const terrainNormal=norm([
+        height(flight.p[0]-2,flight.p[2])-height(flight.p[0]+2,flight.p[2]),
+        4,
+        height(flight.p[0],flight.p[2]-2)-height(flight.p[0],flight.p[2]+2)
+      ]);
+      const terrainAlignment=dot(terrainNormal,up);
+      const sink=-flight.v[1];
+      // 轻松降落：最后一刻还没放起落架就自动放下，避免“忘了放轮”直接摔。
+      if(cfg.easy&&!flight.gear&&sink<7&&Math.abs(flight.bank)<.6){
+        flight.gear=1;flight.gearVisual=Math.max(flight.gearVisual,.3);
+        toast("起落架自动放下。",2);
+      }
+      const safe=(cfg.easy?landable:runway)&&flight.gear&&
+        flight.gearVisual>(cfg.easy?.35:.9)&&
+        sink<(cfg.easy?12:selected==="airliner"?4.2:6)&&
+        Math.abs(flight.bank)<(cfg.easy?.9:.28)&&
+        terrainAlignment>(cfg.easy?.6:.78)&&
+        flight.speed<type.stall*(cfg.easy?2.6:1.95)&&
+        forward[1]>(cfg.easy?-.45:-.35);
+      // 轻松降落的第二档：姿态一般、接地偏重，但还算能保住飞机。
+      const rough=cfg.easy&&landable&&flight.gear&&
+        sink<18&&Math.abs(flight.bank)<1.2&&terrainAlignment>.45&&
+        flight.speed<type.stall*3.1;
+
+      if(!landable)crash("撞击水面");
+      else if(safe||rough){
+        flight.onGround=true;flight.gearVisual=1;flight.gear=1;
+        flight.v[1]=0;flight.auto=false;flight.autoThrottle=false;
+        flight.p[1]=terrain+type.clearance;
+        $("autoBtn").classList.remove("active");
+        if(cfg.easy){
+          // 跑道接地才回中线并启动轮刹；野外接地保持当前位置，避免被吸回机场。
+          if(runway){
+            flight.p[0]=clamp(flight.p[0],-31,31);
+            flight.v[0]*=.15;
+            flight.throttle=Math.min(flight.throttle,.08);landingBrake=12;
+          }
+          flight.bank=0;flight.pitch=0;flight.q=attitude(flight.h,0,0);
+          flight.bankVel=0;flight.pitchVel=0;
+          toast(safe?(runway?"轮胎已经接地！辅助刹车中。":"已在陆地安全接地！")
+            :"接地偏重，但飞机保住了。按 B 刹车。",5);
+        }else toast("成功接地！收油门并按 B 刹车。",5);
+      }else crash(!flight.gear?"未放起落架，机腹撞地":
+        sink>8?"下降太快，重着陆损毁":!landable?"撞击水面":
+        !runway?"地形太陡或姿态不安全":"着陆姿态或速度不安全");
+    }
+
+    if(!crashed)checkBuildings();
+    if(keys.has("Space")||touch.fire)fire();
+    progressLesson();refreshTiles();
+  }
+
+  function environment(){
+    const angle=(cfg.time-6)/24*TAU;
+    const sun=norm([Math.cos(angle)*.65,Math.sin(angle),-.5]);
+    const day=smooth(-.17,.2,sun[1]);
+    const storm=cfg.weather==="storm"?1:cfg.weather==="cloudy"?.4:0;
+    const sunset=(1-smooth(.05,.45,Math.abs(sun[1])))*day;
+    const horizon=[
+      mix(.025,.64,day)+sunset*.21,
+      mix(.045,.79,day)-sunset*.09,
+      mix(.085,.88,day)-sunset*.17
+    ];
+    const zenith=[mix(.008,.17,day),mix(.018,.42,day),mix(.05,.67,day)];
+    for(let i=0;i<3;i++){
+      horizon[i]=mix(horizon[i],.31+day*.12,storm*.58);
+      zenith[i]=mix(zenith[i],.18+day*.1,storm*.65);
+    }
+    const fog=cfg.weather==="haze"?4000:cfg.weather==="storm"?4700:
+      cfg.quality==="high"?10500:8200;
+    return {sun,day,storm,horizon,zenith,fog};
+  }
+  const relativePosition=p=>sub(p,flight.p);
+
+  function drawSky(cam,env,fov,aspect){
+    gl.disable(gl.DEPTH_TEST);gl.useProgram(skyProgram);
+    gl.bindBuffer(gl.ARRAY_BUFFER,skyBuffer);
+    gl.enableVertexAttribArray(K.aPosition);
+    gl.vertexAttribPointer(K.aPosition,2,gl.FLOAT,false,0,0);
+    gl.uniform3fv(K.uRight,cam.right);gl.uniform3fv(K.uUp,cam.up);
+    gl.uniform3fv(K.uForward,cam.forward);gl.uniform3fv(K.uSun,env.sun);
+    gl.uniform3fv(K.uHorizon,env.horizon);gl.uniform3fv(K.uZenith,env.zenith);
+    gl.uniform1f(K.uAspect,aspect);gl.uniform1f(K.uFov,Math.tan(fov/2));
+    gl.uniform1f(K.uDay,env.day);gl.uniform1f(K.uStorm,env.storm);
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);gl.enable(gl.DEPTH_TEST);
+  }
+
+  function drawPlane(){
+    const m=matrix([0,0,0],flight.q),tint=crashed?[.28,.27,.27]:[1,1,1];
+    draw(planes[selected].body,m,tint);
+    if(flight.gearVisual>.02)
+      draw(planes[selected].gear,mmul(m,matrix([0,0,0],[0,0,0,1],[1,flight.gearVisual,1])),tint);
+
+    if(selected==="trainer"){
+      const angle=simTime*(flight.engine?25+flight.throttle*65:1);
+      draw(meshes.box,mmul(m,matrix([0,0,-5.2],qaxis([0,0,1],angle),[.085,1.4,.04])),
+        crashed?[.23,.25,.27]:[.14,.18,.22]);
+      draw(meshes.sphere,mmul(m,matrix([0,0,-5.35],[0,0,0,1],[.18,.18,.2])),[.83,.88,.91]);
+    }
+    if(selected==="fighter"&&flight.engine&&flight.throttle>.88&&!crashed){
+      const pulse=1+Math.sin(simTime*55)*.13;
+      draw(meshes.sphere,mmul(m,matrix([0,0,8.3],[0,0,0,1],[.45,.42,1.8*pulse])),[1,.4,.08],1,2.6);
+      draw(meshes.sphere,mmul(m,matrix([0,0,7.5],[0,0,0,1],[.32,.3,.8])),[.3,.65,1],1,3);
+    }
+    for(const side of [-1,1])
+      draw(meshes.sphere,mmul(m,matrix([side*type.span,.2,selected==="airliner"?4:1.2],
+        [0,0,0,1],[.1,.1,.1])),side<0?[1,.12,.08]:[.1,1,.4],1,3);
+
+    if(Math.sin(simTime*6)>.93)
+      draw(meshes.sphere,mmul(m,matrix([0,selected==="airliner"?2.2:1.2,2],
+        [0,0,0,1],[.12,.12,.12])),[1,1,1],1,4);
+  }
+
+  const overlay=$("graphicsHUD"),hud=overlay.getContext("2d");
+  let screenWidth=0,screenHeight=0,renderWidth=0,renderHeight=0;
+  function resize(){
+    const scale=cfg.quality==="low"?.85:
+      cfg.quality==="high"?Math.min(devicePixelRatio||1,1.8):Math.min(devicePixelRatio||1,1.3);
+    const width=Math.max(1,Math.round(innerWidth*scale));
+    const height=Math.max(1,Math.round(innerHeight*scale));
+    if(width!==renderWidth||height!==renderHeight){
+      canvas.width=width;canvas.height=height;renderWidth=width;renderHeight=height;
+    }
+    if(screenWidth!==innerWidth||screenHeight!==innerHeight){
+      screenWidth=innerWidth;screenHeight=innerHeight;
+      const ratio=Math.min(devicePixelRatio||1,2);
+      overlay.width=Math.round(innerWidth*ratio);overlay.height=Math.round(innerHeight*ratio);
+      hud.setTransform(ratio,0,0,ratio,0,0);
+    }
+  }
+  function project(p){
+    const [x,y,z]=p;
+    const w=vp[3]*x+vp[7]*y+vp[11]*z+vp[15];
+    if(w<=.05)return null;
+    const nx=(vp[0]*x+vp[4]*y+vp[8]*z+vp[12])/w;
+    const ny=(vp[1]*x+vp[5]*y+vp[9]*z+vp[13])/w;
+    if(Math.abs(nx)>1.08||Math.abs(ny)>1.08)return null;
+    return [(nx*.5+.5)*innerWidth,(.5-ny*.5)*innerHeight];
+  }
+
+  function drawGraphicsHUD(){
+    hud.clearRect(0,0,innerWidth,innerHeight);
+    if(!started)return;
+    const gap=groundGap();
+    if(!crashed&&viewMode!==1&&gap>2&&gap<900){
+      const planePoint=project([0,0,0]);
+      const groundPoint=project([0,groundHeight(flight.p[0],flight.p[2])-flight.p[1]+.15,0]);
+      if(planePoint&&groundPoint){
+        hud.save();hud.strokeStyle="#b6ffd0";hud.lineWidth=1.3;
+        hud.setLineDash([5,5]);hud.globalAlpha=.75;
+        hud.beginPath();hud.moveTo(...planePoint);hud.lineTo(...groundPoint);hud.stroke();
+        hud.setLineDash([]);hud.globalAlpha=1;
+        hud.beginPath();hud.ellipse(groundPoint[0],groundPoint[1],19,7,0,0,TAU);hud.stroke();
+        const text="脚下地面 · 相距 "+Math.round(gap)+" 米";
+        hud.font="11px system-ui";
+        const width=hud.measureText(text).width+16;
+        const x=clamp(groundPoint[0]-width/2,6,innerWidth-width-6);
+        const y=clamp(groundPoint[1]+12,18,innerHeight-105);
+        hud.fillStyle="#061822d9";hud.fillRect(x,y,width,24);
+        hud.fillStyle="#bcf5d6";hud.fillText(text,x+8,y+16);hud.restore();
+      }
+    }
+
+    if(viewMode===1&&!crashed){
+      hud.save();hud.translate(innerWidth/2,innerHeight*.57);
+      hud.rotate(-flight.bank);
+      hud.strokeStyle="#c5ffe18c";hud.lineWidth=1;
+      const y=flight.pitch*110;
+      hud.beginPath();hud.moveTo(-78,y);hud.lineTo(-15,y);
+      hud.moveTo(15,y);hud.lineTo(78,y);hud.stroke();
+      for(const offset of [-30,30]){
+        hud.beginPath();hud.moveTo(-27,y+offset);hud.lineTo(27,y+offset);hud.stroke();
+      }
+      hud.restore();
+    }
+
+    if(cfg.weather==="storm"&&!paused&&!activeModal){
+      hud.strokeStyle="#d3edf433";hud.lineWidth=1;
+      for(let i=0;i<45;i++){
+        const x=hash(i,12)*innerWidth;
+        const y=((hash(i,36)+simTime*1.5)%1)*innerHeight;
+        hud.beginPath();hud.moveTo(x,y);hud.lineTo(x-5,y+24);hud.stroke();
+      }
+    }
+  }
+
+  function render(dt,now){
+    resize();
+    const aspect=canvas.width/canvas.height,fov=(viewMode===1?74:65)*PI/180;
+    const f=rotate(flight.q,[0,0,-1]),up=rotate(flight.q,[0,1,0]);
+    let eye,target,camUp;
+
+    if(!started){
+      const a=now*.00012;
+      eye=[Math.sin(a)*type.camera,type.camera*.4,Math.cos(a)*type.camera];
+      target=[0,.3,0];camUp=[0,1,0];
+    }else if(viewMode===1){
+      eye=rotate(flight.q,type.cockpit);target=add(eye,mul(f,100));camUp=up;
+    }else if(viewMode===2){
+      const distance=type.camera*1.2;
+      eye=[Math.sin(orbitYaw)*Math.cos(orbitPitch)*distance,
+        Math.sin(orbitPitch)*distance,Math.cos(orbitYaw)*Math.cos(orbitPitch)*distance];
+      target=[0,0,0];camUp=[0,1,0];
+    }else{
+      const wanted=add(mul(f,-type.camera),[0,type.camera*.28,0]);
+      cameraOffset=cameraOffset.map((v,i)=>mix(v,wanted[i],damp(4.5,dt)));
+      eye=cameraOffset.slice();target=add(mul(f,type.camera*.25),[0,1,0]);camUp=[0,1,0];
+    }
+
+    const worldEye=add(flight.p,eye);
+    const cameraFloor=groundHeight(worldEye[0],worldEye[2])+1;
+    if(viewMode!==1&&worldEye[1]<cameraFloor)eye[1]+=cameraFloor-worldEye[1];
+
+    const cam=lookAt(eye,target,camUp),env=environment();
+    vp=mmul(perspective(fov,aspect,.12,17000),cam.matrix);
+    gl.viewport(0,0,canvas.width,canvas.height);
+    gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    drawSky(cam,env,fov,aspect);
+
+    gl.useProgram(sceneProgram);
+    gl.uniformMatrix4fv(S.uVP,false,vp);
+    gl.uniform3fv(S.uEye,eye);gl.uniform3fv(S.uSun,env.sun);
+    gl.uniform3fv(S.uFog,env.horizon);gl.uniform1f(S.uDay,env.day);
+    gl.uniform2fv(S.uFogRange,[env.fog*.28,env.fog]);
+
+    for(const tile of tiles.values()){
+      const m=matrix([tile.x-flight.p[0],-flight.p[1],tile.z-flight.p[2]]);
+      draw(tile.terrain,m);draw(tile.decor,m);
+    }
+
+    if(Math.hypot(flight.p[0],flight.p[2])<env.fog+1600){
+      draw(airport,matrix(mul(flight.p,-1)));
+      for(let z=-1150;z<=1150;z+=145)
+        for(const side of [-1,1])
+          draw(meshes.sphere,matrix(relativePosition([side*37,8.4,z]),
+            [0,0,0,1],[.6,.25,.6]),[.61,.82,1],1,2.3-env.day);
+      for(let x=-25;x<=25;x+=10){
+        draw(meshes.sphere,matrix(relativePosition([x,8.4,1195]),
+          [0,0,0,1],[.7,.25,.7]),[.1,1,.3],1,2);
+        draw(meshes.sphere,matrix(relativePosition([x,8.4,-1195]),
+          [0,0,0,1],[.7,.25,.7]),[1,.1,.1],1,2);
+      }
+    }
+
+    if(cfg.weather!=="haze"){
+      const cx=Math.floor(flight.p[0]/2200),cz=Math.floor(flight.p[2]/2200);
+      const radius=cfg.quality==="low"?1:2;
+      for(let z=-radius;z<=radius;z++)
+        for(let x=-radius;x<=radius;x++){
+          const gx=cx+x,gz=cz+z;
+          if(cfg.weather==="clear"&&hash(gx+4,gz+8)<.45)continue;
+          const wx=gx*2200+hash(gx,gz)*1700,wz=gz*2200+hash(gx+77,gz+25)*1700;
+          const y=1100+hash(gx-2,gz+7)*1100;
+          const base=relativePosition([wx,y,wz]);
+          for(let i=0;i<3;i++)
+            draw(meshes.sphere,matrix(add(base,[i*170-170,i===1?75:0,0]),
+              [0,0,0,1],[230+i*20,85+i*15,175]),
+              cfg.weather==="storm"?[.58,.62,.67]:[.95,.97,1]);
+        }
+    }
+
+    gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthMask(false);
+    draw(meshes.box,matrix([0,-flight.p[1]-.1,0],[0,0,0,1],[14000,.06,14000]),
+      cfg.weather==="storm"?[.15,.28,.35]:[.07,.43,.56],.82);
+    const gap=groundGap();
+    if(!crashed&&gap<450){
+      draw(meshes.sphere,matrix([0,groundHeight(flight.p[0],flight.p[2])-flight.p[1]+.17,0],
+        [0,0,0,1],[type.span,.075,selected==="airliner"?16:6]),
+        [.04,.07,.08],.38*(1-gap/450));
+    }
+    gl.depthMask(true);gl.disable(gl.BLEND);
+
+    if(cfg.targets)
+      for(const t of targets){
+        if(!t.active||len(sub(t.p,flight.p))>env.fog)continue;
+        draw(meshes.sphere,matrix(relativePosition(t.p),[0,0,0,1],[10,13,10]),[1,.4,.17]);
+        draw(meshes.box,matrix(relativePosition(add(t.p,[0,-31,0])),
+          [0,0,0,1],[.12,18,.12]),[.5,.53,.48]);
+      }
+
+    if(viewMode!==1||crashed||!started)drawPlane();
+    for(const b of bullets)
+      draw(meshes.box,matrix(relativePosition(b.p),b.q,[.06,.06,6]),[1,.8,.25],1,3);
+
+    for(const p of particles){
+      const size=p.size*clamp(p.life/p.max,0,1);
+      draw(meshes.sphere,matrix(relativePosition(p.p),[0,0,0,1],[size,size,size]),
+        p.color,1,p.color[0]>.8?1.6:0);
+    }
+    drawGraphicsHUD();
+  }
+
+  const mapContext=$("map").getContext("2d");
+  function drawMap(){
+    const c=mapContext,range=6000;
+    c.clearRect(0,0,180,180);c.fillStyle="#0a2638";c.fillRect(0,0,180,180);
+    c.strokeStyle="#79cde52b";c.lineWidth=1;
+    for(const radius of [30,60,87]){
+      c.beginPath();c.arc(90,90,radius,0,TAU);c.stroke();
+    }
+    c.beginPath();c.moveTo(0,90);c.lineTo(180,90);c.moveTo(90,0);c.lineTo(90,180);c.stroke();
+    const x=90-flight.p[0]/range*85,z=90-flight.p[2]/range*85;
+    if(x>-20&&x<200&&z>-20&&z<200){
+      c.strokeStyle="#d9e8dd";c.lineWidth=4;
+      c.beginPath();c.moveTo(x,z-17);c.lineTo(x,z+17);c.stroke();
+      c.fillStyle="#b9eedc";c.font="9px system-ui";c.fillText("机场",x+7,z+4);
+    }else{
+      const direction=norm([-flight.p[0],0,-flight.p[2]]);
+      c.fillStyle="#ffcd92";c.beginPath();
+      c.arc(90+direction[0]*79,90+direction[2]*79,3,0,TAU);c.fill();
+    }
+    if(cfg.targets){
+      c.fillStyle="#ffab71";
+      for(const t of targets){
+        const tx=90+(t.p[0]-flight.p[0])/range*85;
+        const tz=90+(t.p[2]-flight.p[2])/range*85;
+        if(t.active&&tx>0&&tx<180&&tz>0&&tz<180){
+          c.beginPath();c.arc(tx,tz,2,0,TAU);c.fill();
+        }
+      }
+    }
+    c.save();c.translate(90,90);c.rotate(flight.h);c.fillStyle="#8feeff";
+    c.beginPath();c.moveTo(0,-9);c.lineTo(6,7);c.lineTo(0,3);c.lineTo(-6,7);c.closePath();c.fill();c.restore();
+    c.font="10px system-ui";c.fillStyle="#99b8c9";c.fillText("N",87,12);
+  }
+
+  function updateHUD(){
+    const gap=groundGap(),heading=(flight.h*180/PI+360)%360;
+    const cardinal=["N","NE","E","SE","S","SW","W","NW"][Math.round(heading/45)%8];
+    const airportDistance=Math.hypot(flight.p[0],flight.p[2]);
+    const bearing=(Math.atan2(-flight.p[0],flight.p[2])*180/PI+360)%360;
+    $("heading").textContent=Math.round(heading).toString().padStart(3,"0")+"° "+cardinal;
+    $("navigation").textContent="机场 "+(airportDistance/1000).toFixed(1)+" km · 方位 "+Math.round(bearing)+"°";
+    $("speed").textContent=Math.round(flight.speed*3.6);
+    $("altitude").textContent=Math.round(flight.p[1]);
+    $("distance").textContent=(flight.distance/1000).toFixed(1);
+    const gapText=gap<20?gap.toFixed(1):Math.round(gap).toString();
+    $("agl").textContent=gapText;$("heightValue").textContent=gapText;
+    $("throttleValue").textContent=Math.round(flight.throttle*100)+"%";
+    if(!throttleDragging)$("throttle").value=Math.round(flight.throttle*100);
+    $("flightStatus").innerHTML=
+      "发动机 "+(flight.engine?"运行":"关闭")+"<br>"+
+      "自动摆正 "+(cfg.assist?"开启":"关闭")+" · 自动驾驶 "+(flight.auto?"开启":"关闭")+"<br>"+
+      "起落架 "+(type.fixedGear?"固定":flight.gear?"放下":"收起")+" · 襟翼 "+flight.flaps+"<br>"+
+      "起飞参考 "+Math.round(type.rotate*3.6)+" km/h · 燃油 "+
+      (cfg.infiniteFuel?"∞":Math.round(flight.fuel)+"%")+
+      (flight.speedBrake?"<br><span style=\"color:#ffd095\">减速板展开中</span>":"");
+
+    let color="#89efff",trend,hint,warning="";
+    if(crashed){
+      color="#ffd095";trend="飞机已经损毁";hint="重新开始就可以继续飞行";
+      warning="飞机损毁";
+    }else if(flight.onGround){
+      color="#adf3c4";trend="轮胎已经接地";
+      hint=guidedLanding?"自动刹停中":
+        landingBrake>0?"辅助刹车中 · 加油门可重新起飞":"襟翼已准备 · 点一键起飞或推满油门";
+    }else{
+      const vy=flight.v[1];
+      trend=vy<-.2?"每秒下降 "+Math.abs(vy).toFixed(1)+" 米":
+        vy>.2?"每秒上升 "+vy.toFixed(1)+" 米":"高度基本不变";
+      if(flight.takeoffAssist){
+        hint="起飞辅助爬升中 · 100 米后交给你操纵";
+      }else if(guidedLanding){
+        hint="自动降落中 · 动摇杆或按任意操纵键可接管";
+      }else if(gap<25&&vy<-3){
+        color="#ff9b82";hint="下降太快！轻轻抬头，别继续压低机头";
+      }else if(gap<10){
+        color="#ffd095";hint="马上接地 · 保持机翼水平，轻拉机头";
+      }else if(landingAssistActive){
+        color="#adf3c4";hint="降落辅助：已放起落架襟翼，正在控制下降率";
+      }else if(gap<70&&vy<-.2){
+        color="#ffd095";hint="快接近地面 · 尽量每秒下降 1—3 米";
+      }else if(cfg.assist){
+        hint="自动摆正已开启 · 松杆会自己回到水平";
+      }else{
+        hint="这个数字是距脚下地形，不是海拔";
+      }
+      if(flight.stall&&!guidedLanding)warning="⚠ 失速：降低机头，增加空速";
+      else if(gap<55&&vy<-5&&!guidedLanding)warning="⚠ 下降过快 · 轻轻拉起";
+      else if(flight.auto)warning="自动驾驶 · 距地 "+cfg.autoAltitude+" 米";
+    }
+    $("heightValue").style.color=color;$("agl").style.color=color;
+    $("verticalDescription").textContent=trend;
+    $("heightHint").textContent=hint;$("warning").textContent=warning;
+    $("landingBadge").textContent=guidedLanding?"正在自动降落（可随时接管）":
+      landingAssistActive?"降落辅助正在介入":cfg.easy?"轻松降落辅助开启":"真实难度 · 辅助关闭";
+    $("landingBadge").style.background=cfg.easy||guidedLanding?"#22493a":"#4b3927";
+    $("landingBadge").style.color=cfg.easy||guidedLanding?"#adf3c4":"#ffd095";
+    $("pauseLabel").classList.toggle("hidden",!paused||!!activeModal);
+    $("pauseBtn").textContent=paused?"继续 P":"暂停 P";
+    $("takeoffBtn").disabled=crashed||(!flight.onGround&&!flight.takeoffAssist);
+    $("takeoffBtn").textContent=flight.takeoffAssist?"起飞辅助中 · 操纵可接管":"一键起飞";
+    updateLandingButton();drawMap();
+  }
+
+  function syncSettings(){
+    $("timeSetting").value=cfg.time;
+    const minutes=Math.round(cfg.time*60);
+    $("timeLabel").textContent=Math.floor(minutes/60).toString().padStart(2,"0")+":"+
+      (minutes%60).toString().padStart(2,"0");
+    $("windSetting").value=cfg.wind;$("windLabel").textContent=cfg.wind+" m/s";
+    $("weatherSetting").value=cfg.weather;$("qualitySetting").value=cfg.quality;
+    $("autoAltitude").value=cfg.autoAltitude;$("spawnAltitude").value=cfg.spawnAltitude;
+    $("sensitivitySetting").value=Math.round(cfg.sensitivity*100);
+    $("sensitivityLabel").textContent=Math.round(cfg.sensitivity*100)+"%";
+    $("easySetting").checked=cfg.easy;$("assistSetting").checked=cfg.assist;
+    $("soundSetting").checked=cfg.sound;$("targetSetting").checked=cfg.targets;
+    $("fuelSetting").checked=cfg.infiniteFuel;
+  }
+
+  document.querySelectorAll("[data-plane]").forEach(button=>{
+    button.onclick=()=>{
+      selected=button.dataset.plane;type=types[selected];
+      document.querySelectorAll("[data-plane]").forEach(b=>b.classList.toggle("selected",b===button));
+      reset("ground");
+    };
+  });
+  $("startGround").onclick=()=>start("ground");
+  $("startAir").onclick=()=>start("air");
+  $("startLanding").onclick=()=>start("landing");
+  $("viewBtn").onclick=cycleView;$("autoBtn").onclick=toggleAuto;
+  function toggleLevelAssist(){
+    if(crashed)return;
+    cfg.assist=!cfg.assist;saveSettings();
+    $("levelBtn").classList.toggle("active",cfg.assist);
+    $("assistSetting").checked=cfg.assist;
+    if(started)flight.vsTrim=0;
+    toast(cfg.assist
+      ?"自动摆正开启：保持水平与航向，你的操纵随时优先。"
+      :"自动摆正关闭：完全手动，注意自己配平俯仰。",4);
+  }
+  $("levelBtn").onclick=toggleLevelAssist;
+  $("landingBtn").onclick=()=>startGuidedLanding(false);
+  $("helpBtn").onclick=()=>openModal("helpScreen");
+  $("settingsBtn").onclick=()=>{syncSettings();openModal("settingsScreen")};
+  $("pauseBtn").onclick=togglePause;
+  $("settingsClose").onclick=closeModal;$("helpClose").onclick=closeModal;
+  $("settingsAutoBtn").onclick=toggleAuto;
+  $("settingsLanding").onclick=()=>startGuidedLanding(true);
+  $("showLessons").onclick=()=>{lessonOpen=true;lessonStep=0;renderLesson();closeModal()};
+  $("lessonPrev").onclick=()=>{lessonStep=Math.max(0,lessonStep-1);renderLesson()};
+  $("lessonNext").onclick=()=>{lessonStep=Math.min(lessons.length-1,lessonStep+1);renderLesson()};
+  $("lessonClose").onclick=()=>{lessonOpen=false;renderLesson()};
+
+  $("takeoffBtn").onclick=()=>{
+    if(crashed||!flight.onGround)return;
+    initAudio();closeModal();paused=false;guidedLanding=null;landingBrake=0;
+    flight.auto=false;flight.engine=true;flight.flaps=1;flight.gear=1;
+    flight.throttle=1;flight.takeoffAssist=true;flight.holdHeading=flight.h;
+    flight.vsTrim=0;$("autoBtn").classList.remove("active");
+    $("throttle").value=100;updateLandingButton();updateHUD();
+    toast("起飞辅助：自动加速、抬头并爬升到距地 100 米。方向键或摇杆可接管。",6);
+  };
+  let throttleDragging=false;
+  $("throttle").addEventListener("pointerdown",()=>throttleDragging=true);
+  for(const event of ["pointerup","pointercancel","blur"])
+    window.addEventListener(event,()=>throttleDragging=false);
+  $("throttle").oninput=e=>{
+    landingBrake=0;
+    if(guidedLanding){
+      guidedLanding=null;updateLandingButton();toast("油门输入已接管飞机。");
+    }
+    flight.throttle=Number(e.target.value)/100;
+  };
+  $("timeSetting").oninput=e=>{cfg.time=Number(e.target.value);syncSettings();saveSettings()};
+  $("windSetting").oninput=e=>{cfg.wind=Number(e.target.value);syncSettings();saveSettings()};
+  $("weatherSetting").onchange=e=>{cfg.weather=e.target.value;saveSettings()};
+  $("qualitySetting").onchange=e=>{cfg.quality=e.target.value;rebuildTiles();saveSettings()};
+  for(const [id,key]of [
+    ["easySetting","easy"],["assistSetting","assist"],["soundSetting","sound"],
+    ["targetSetting","targets"],["fuelSetting","infiniteFuel"]
+  ])$(id).onchange=e=>{
+    cfg[key]=e.target.checked;
+    if(key==="sound"&&cfg.sound)initAudio();
+    if(key==="easy"&&!cfg.easy)landingBrake=0;
+    if(key==="assist"){
+      $("levelBtn").classList.toggle("active",cfg.assist);
+      if(started)flight.vsTrim=0;
+    }
+    saveSettings();updateHUD();
+  };
+  $("sensitivitySetting").oninput=e=>{
+    cfg.sensitivity=clamp(Number(e.target.value)/100,.5,1.5);
+    $("sensitivityLabel").textContent=Math.round(cfg.sensitivity*100)+"%";
+    saveSettings();
+  };
+  $("autoAltitude").onchange=e=>{
+    cfg.autoAltitude=clamp(Number(e.target.value)||1200,100,12000);
+    e.target.value=cfg.autoAltitude;saveSettings();
+  };
+  $("spawnAltitude").onchange=e=>{
+    cfg.spawnAltitude=clamp(Number(e.target.value)||800,100,10000);
+    e.target.value=cfg.spawnAltitude;saveSettings();
+  };
+  $("applyHeight").onclick=()=>{
+    cfg.spawnAltitude=clamp(Number($("spawnAltitude").value)||800,100,10000);
+    if(crashed)reset("air");
+    guidedLanding=null;landingBrake=0;flight.auto=false;
+    flight.onGround=false;flight.engine=true;flight.throttle=.6;
+    flight.gear=type.fixedGear?1:0;flight.gearVisual=flight.gear;flight.flaps=0;
+    flight.pitch=.025;flight.bank=0;flight.q=attitude(flight.h,flight.pitch,0);
+    flight.p[1]=groundHeight(flight.p[0],flight.p[2])+clearance()+cfg.spawnAltitude;
+    flight.v=mul(rotate(flight.q,[0,0,-1]),type.cruise);
+    flight.speed=type.cruise;paused=false;
+    $("autoBtn").classList.remove("active");
+    updateLandingButton();saveSettings();closeModal();
+    toast("已调整到距脚下地面 "+cfg.spawnAltitude+" 米。");
+  };
+  $("changePlane").onclick=()=>{
+    selected=$("planeSetting").value;reset("ground");closeModal();
+    document.querySelectorAll("[data-plane]").forEach(b=>b.classList.toggle("selected",b.dataset.plane===selected));
+    toast("已切换为 "+type.name);
+  };
+  $("runwayBtn").onclick=()=>{reset("ground");closeModal();toast("已回到跑道。")};
+  $("refuelBtn").onclick=()=>{flight.fuel=100;flight.engine=true;toast("燃油已加满。")};
+  $("crashRunway").onclick=()=>reset("ground");
+  $("crashAir").onclick=()=>reset("air");
+  $("crashLanding").onclick=()=>startGuidedLanding(true);
+  $("crashChoose").onclick=()=>{
+    closeModal();started=false;lessonOpen=false;reset("ground");
+    $("gameUI").classList.add("hidden");$("startScreen").classList.remove("hidden");
+  };
+
+  const gameCodes=new Set([
+    "Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight",
+    "KeyW","KeyS","KeyA","KeyD","KeyQ","KeyE","KeyB","KeyG","KeyF",
+    "KeyV","KeyT","KeyI","KeyN","KeyP","KeyH","KeyL",
+    "ShiftLeft","ShiftRight","Equal","Minus","NumpadAdd","NumpadSubtract"
+  ]);
+  window.addEventListener("keydown",e=>{
+    const target=document.activeElement;
+    const typing=target.tagName==="SELECT"||target.tagName==="TEXTAREA"||
+      (target.tagName==="INPUT"&&target.type!=="range"&&target.type!=="checkbox");
+    if(e.code==="Escape"){
+      if(activeModal)closeModal();else togglePause();return;
+    }
+    if(!started||typing)return;
+    if(gameCodes.has(e.code)&&!activeModal)e.preventDefault();
+    if(!e.repeat&&e.code==="KeyH"){
+      activeModal==="helpScreen"?closeModal():openModal("helpScreen");return;
+    }
+    if(!e.repeat&&e.code==="KeyP"){togglePause();return}
+    if(activeModal||paused)return;
+    keys.add(e.code);
+    if(e.repeat)return;
+    if(e.code==="KeyG")toggleGear();
+    if(e.code==="KeyF")toggleFlaps();
+    if(e.code==="KeyV")cycleView();
+    if(e.code==="KeyT")toggleAuto();
+    if(e.code==="KeyL")toggleLevelAssist();
+    if(e.code==="KeyN"){reset("ground");toast("已回到跑道。")}
+    if(e.code==="KeyI"){
+      flight.engine=!flight.engine;
+      toast(flight.engine?"发动机启动":"发动机关闭，可以继续滑翔。");
+    }
+  });
+  window.addEventListener("keyup",e=>keys.delete(e.code));
+  function backgroundPause(){
+    clearInput();
+    if(started&&!crashed){paused=true;updateHUD();updateAudio()}
+  }
+  window.addEventListener("blur",backgroundPause);
+  document.addEventListener("visibilitychange",()=>{if(document.hidden)backgroundPause()});
+  window.addEventListener("pointerdown",()=>{if(started)initAudio()},{passive:true});
+
+  function holdButton(id,on,off){
+    const button=$(id);
+    button.addEventListener("pointerdown",e=>{
+      e.preventDefault();button.setPointerCapture(e.pointerId);on();
+    });
+    for(const event of ["pointerup","pointercancel","lostpointercapture"])
+      button.addEventListener(event,off);
+  }
+  holdButton("touchFire",()=>touch.fire=true,()=>touch.fire=false);
+  holdButton("touchBrake",()=>touch.brake=true,()=>touch.brake=false);
+  holdButton("touchLeft",()=>touch.yaw=-1,()=>{if(touch.yaw===-1)touch.yaw=0});
+  holdButton("touchRight",()=>touch.yaw=1,()=>{if(touch.yaw===1)touch.yaw=0});
+  $("touchGear").onclick=toggleGear;$("touchFlaps").onclick=toggleFlaps;
+
+  let joyPointer=null;
+  const joystick=$("joystick");
+  function moveJoystick(e){
+    const r=joystick.getBoundingClientRect(),radius=r.width*.38;
+    let x=(e.clientX-r.left-r.width/2)/radius;
+    let y=(e.clientY-r.top-r.height/2)/radius;
+    const distance=Math.hypot(x,y);
+    if(distance>1){x/=distance;y/=distance}
+    touch.roll=-x;touch.pitch=y;
+    $("stick").style.transform="translate("+(x*radius)+"px,"+(y*radius)+"px)";
+  }
+  joystick.addEventListener("pointerdown",e=>{
+    e.preventDefault();joyPointer=e.pointerId;
+    joystick.setPointerCapture(e.pointerId);moveJoystick(e);
+  });
+  joystick.addEventListener("pointermove",e=>{if(e.pointerId===joyPointer)moveJoystick(e)});
+  function releaseJoystick(){
+    joyPointer=null;touch.roll=0;touch.pitch=0;
+    $("stick").style.transform="translate(0px,0px)";
+  }
+  for(const event of ["pointerup","pointercancel","lostpointercapture"])
+    joystick.addEventListener(event,releaseJoystick);
+
+  let drag=null;
+  canvas.addEventListener("pointerdown",e=>{
+    if(viewMode!==2||!started||activeModal)return;
+    canvas.setPointerCapture(e.pointerId);
+    drag={id:e.pointerId,x:e.clientX,y:e.clientY};
+  });
+  canvas.addEventListener("pointermove",e=>{
+    if(!drag||drag.id!==e.pointerId)return;
+    orbitYaw-=(e.clientX-drag.x)*.008;
+    orbitPitch=clamp(orbitPitch+(e.clientY-drag.y)*.006,-.12,1.4);
+    drag.x=e.clientX;drag.y=e.clientY;
+  });
+  for(const event of ["pointerup","pointercancel","lostpointercapture"])
+    canvas.addEventListener(event,()=>drag=null);
+  canvas.addEventListener("contextmenu",e=>e.preventDefault());
+
+  gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);
+  gl.disable(gl.CULL_FACE);gl.clearColor(.1,.2,.3,1);
+  canvas.addEventListener("webglcontextlost",e=>{
+    e.preventDefault();backgroundPause();
+    $("warning").textContent="图形上下文已中断，请刷新页面重新开始。";
+  });
+
+  syncSettings();reset("ground");
+  for(let i=0;i<9&&tileQueue.length;i++){
+    const [x,z]=tileQueue.shift();tiles.set(x+","+z,createTile(x,z));
+  }
+
+  let last=performance.now(),accumulator=0,hudTimer=0;
+  function frame(now){
+    const dt=clamp((now-last)/1000,0,.1);last=now;
+    const running=started&&!paused&&!activeModal&&$("crashScreen").classList.contains("hidden");
+    if(running){
+      accumulator+=dt;
+      let steps=0;
+      while(accumulator>=1/90&&steps<9){
+        simulate(1/90);accumulator-=1/90;steps++;
+      }
+    }else accumulator=0;
+
+    if(tileQueue.length){
+      const [x,z]=tileQueue.shift(),key=x+","+z;
+      if(!tiles.has(key))tiles.set(key,createTile(x,z));
+    }
+    render(dt,now);
+    hudTimer+=dt;
+    if(hudTimer>.1){hudTimer=0;updateHUD();updateAudio()}
+    if(toastUntil&&now>toastUntil){$("toast").style.opacity="0";toastUntil=0}
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
